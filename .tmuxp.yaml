@@ -1,0 +1,23 @@
+session_name: dom-content
+shell_command_before: "export RUST_LOG=info; clear;"
+windows:
+  - window_name: code
+    focus: true
+    start-directory: ./
+    panes:
+      - shell_command:
+        - nvim
+  - window_name: cmd
+    start-directory: ./
+    panes:
+      - shell_command:
+        - exa
+  - window_name: srv
+    start-directory: ./
+    panes:
+      - shell_command:
+        - exa --long
+  - window_name: notes
+    panes:
+      - shell_command:
+        - emacs -nw notes.org
