@@ -1,11 +1,13 @@
-use ego_tree::NodeId;
+use ego_tree::{NodeId, NodeMut, NodeRef, Tree};
 use scraper::{
     element_ref::ElementRef,
     node::{Element, Node, Text},
     Html, Selector,
 };
+use std::borrow::BorrowMut;
 use std::{fs, path, rc::Rc};
 use thiserror::Error;
+use tree::DensityNode;
 
 mod tree;
 
@@ -26,17 +28,50 @@ pub fn build_dom(html: &str) -> Html {
     document
 }
 
-pub fn build_density_tree(node: ego_tree::NodeRef<Node>, &mut side_tree: tree::DCTree) {
-    if !node.has_children() {
-        return;
-    }
+pub fn build_density_tree(node: NodeRef<Node>, density_node: &mut NodeMut<tree::DensityNode>) {
+    // println!("DensityNode: {:?}", density_node);
     for child in node.children() {
-        if child.value().is_element() {
-            println!("Recursive nodes: {:?}", child.value());
-            let side_part = side_tree.append()
-            build_density_tree(child, side_tree)
-        }
+        let child_density_node = tree::DensityNode {
+            node_id: child.id(),
+            char_count: 0,
+            tag_count: 0,
+            link_char_count: 0,
+            link_tag_count: 0,
+            density: 0.0,
+        };
+
+        let mut child_density_node = density_node.append(child_density_node);
+        build_density_tree(child, &mut child_density_node.borrow_mut());
     }
+
+    /*
+    let mut current_node = density_node.tree().values_mut();
+    for child in density_node.child {
+        let child_node = child.value();
+
+        current_node.char_count += child_node.char_count;
+        current_node.tag_count += child_node.tag_count;
+        current_node.link_char_count += child_node.link_char_count;
+        current_node.link_tag_count += child_node.link_tag_count;
+    }
+
+    if let Some(element) = node.value().as_element() {
+        println!("Element name: {:?}", element);
+        if element.name() == "a" {
+            current_node.link_tag_count += 1;
+            current_node.link_char_count += current_node.char_count;
+        }
+
+        current_node.tag_count += 1;
+    } else if let Some(text) = node.value().as_text() {
+        println!("text: {:?}", text.text.trim());
+        current_node.char_count += text.text.len() as u32;
+    }
+
+    if current_node.tag_count > 0 {
+        current_node.density = current_node.char_count as f32 / current_node.tag_count as f32;
+    }
+    */
 }
 
 pub fn compute_density_old<'a>(document: &'a Html) -> u32 {
@@ -65,7 +100,7 @@ pub fn compute_density_old<'a>(document: &'a Html) -> u32 {
         text_len
     }
 
-    let mut nodes: Vec<tree::DCNode> = vec![];
+    let mut nodes: Vec<tree::DensityNode> = vec![];
 
     for node in body.descendants() {
         if node.value().is_element() {
@@ -116,7 +151,7 @@ pub fn compute_density_old<'a>(document: &'a Html) -> u32 {
                 println!("Node total text len: {}", total_text_len);
                 println!("Density: {}", density);
                 println!("=========================");
-                nodes.push(tree::DCNode {
+                nodes.push(tree::DensityNode {
                     node_id: node.id(),
                     char_count: text_len,
                     tag_count: descendant_nodes_count as u32,
@@ -184,9 +219,13 @@ mod tests {
         let body_selector = Selector::parse("body").unwrap();
         let body = &document.select(&body_selector).next().unwrap().to_owned();
 
-        let mut side_tree = tree::DCTree::new(body.id());
-        let tree = build_density_tree(body.tree().get(body.id()).unwrap(), side_tree);
-        println!("Tree: {:?}", tree);
+        let node_id = body.id();
+        let node = body.tree().get(node_id).unwrap();
+
+        let mut density_tree = tree::DensityTree::new(body.id());
+
+        build_density_tree(node, &mut density_tree.tree.root_mut());
+        println!("Tree: {:#?}", density_tree);
     }
 
     // #[test]

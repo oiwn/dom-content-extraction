@@ -1,14 +1,14 @@
 use ego_tree::{NodeId, Tree};
 
 #[derive(Debug)]
-pub struct DCTree {
-    tree: Tree<DCNode>,
+pub struct DensityTree {
+    pub tree: Tree<DensityNode>,
 }
 
-impl DCTree {
+impl DensityTree {
     pub fn new(node_id: NodeId) -> Self {
-        DCTree {
-            tree: Tree::new(DCNode::new(node_id)),
+        Self {
+            tree: Tree::new(DensityNode::new(node_id)),
         }
     }
 
@@ -16,7 +16,7 @@ impl DCTree {
 }
 
 #[derive(Debug, Clone)]
-pub struct DCNode {
+pub struct DensityNode {
     pub node_id: NodeId,
 
     pub char_count: u32,
@@ -26,9 +26,9 @@ pub struct DCNode {
     pub density: f32,
 }
 
-impl DCNode {
-    fn new(node_id: NodeId) -> Self {
-        DCNode {
+impl DensityNode {
+    pub fn new(node_id: NodeId) -> Self {
+        Self {
             node_id,
             char_count: 0,
             tag_count: 0,
