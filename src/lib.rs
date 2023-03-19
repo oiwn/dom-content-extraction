@@ -1,36 +1,25 @@
-use ego_tree::{NodeId, NodeMut, NodeRef, Tree};
-use scraper::{
-    element_ref::ElementRef,
-    node::{Element, Node, Text},
-    Html, Selector,
-};
-use std::borrow::BorrowMut;
-use std::{fs, path, rc::Rc};
-use thiserror::Error;
-use tree::DensityNode;
+use ego_tree;
+// use scraper::{element_ref::ElementRef, node, Html, Selector};
+use scraper::node;
 
 mod tree;
+mod utils;
 
-#[derive(Error, Debug)]
-pub enum DomContentError {
-    #[error("Error reading file")]
-    UnableToReadFile(#[from] std::io::Error),
+fn prepend_dash_n_times(n: usize) -> String {
+    let dashes = std::iter::repeat("-").take(n).collect::<String>();
+    format!("{}", dashes)
 }
 
-pub fn read_file(file_path: impl AsRef<path::Path>) -> Result<String, DomContentError> {
-    let content: String =
-        fs::read_to_string(file_path).map_err(DomContentError::UnableToReadFile)?;
-    Ok(content)
-}
-
-pub fn build_dom(html: &str) -> Html {
-    let document: Html = Html::parse_document(html);
-    document
-}
-
-pub fn build_density_tree(node: NodeRef<Node>, density_node: &mut NodeMut<tree::DensityNode>) {
+pub fn build_density_tree(
+    node: ego_tree::NodeRef<node::Node>,
+    density_node: &mut ego_tree::NodeMut<tree::DensityNode>,
+    parent_id: ego_tree::NodeId,
+    depth: usize,
+) {
     // println!("DensityNode: {:?}", density_node);
     for child in node.children() {
+        let _dashes = prepend_dash_n_times(depth);
+        // println!("{} Child: {:#?}", dashes, child.value());
         let child_density_node = tree::DensityNode {
             node_id: child.id(),
             char_count: 0,
@@ -40,23 +29,15 @@ pub fn build_density_tree(node: NodeRef<Node>, density_node: &mut NodeMut<tree::
             density: 0.0,
         };
 
-        let mut child_density_node = density_node.append(child_density_node);
-        build_density_tree(child, &mut child_density_node.borrow_mut());
+        let mut te = density_node.append(child_density_node);
+        build_density_tree(child, &mut te, child.id(), depth + 1);
     }
+
+    let mut current_node = density_node.tree().get_mut(node.id()).unwrap();
+    current_node.value().tag_count += 1;
 
     /*
-    let mut current_node = density_node.tree().values_mut();
-    for child in density_node.child {
-        let child_node = child.value();
-
-        current_node.char_count += child_node.char_count;
-        current_node.tag_count += child_node.tag_count;
-        current_node.link_char_count += child_node.link_char_count;
-        current_node.link_tag_count += child_node.link_tag_count;
-    }
-
     if let Some(element) = node.value().as_element() {
-        println!("Element name: {:?}", element);
         if element.name() == "a" {
             current_node.link_tag_count += 1;
             current_node.link_char_count += current_node.char_count;
@@ -64,7 +45,6 @@ pub fn build_density_tree(node: NodeRef<Node>, density_node: &mut NodeMut<tree::
 
         current_node.tag_count += 1;
     } else if let Some(text) = node.value().as_text() {
-        println!("text: {:?}", text.text.trim());
         current_node.char_count += text.text.len() as u32;
     }
 
@@ -74,120 +54,11 @@ pub fn build_density_tree(node: NodeRef<Node>, density_node: &mut NodeMut<tree::
     */
 }
 
-pub fn compute_density_old<'a>(document: &'a Html) -> u32 {
-    let body_selector = Selector::parse("body").unwrap();
-    let body = &document.select(&body_selector).next().unwrap().to_owned();
-
-    fn node_text_len(n: ego_tree::NodeRef<Node>) -> u32 {
-        let mut text_len: u32 = 0;
-        for x in n.descendants() {
-            if x.value().is_text() {
-                text_len += x.value().as_text().unwrap().text.len32();
-            }
-        }
-        text_len
-    }
-
-    fn href_text_len(n: ego_tree::NodeRef<Node>) -> u32 {
-        let mut text_len: u32 = 0;
-        for x in n.descendants() {
-            if x.value().is_element() {
-                if x.value().as_element().unwrap().name() == "a" {
-                    text_len += node_text_len(x);
-                }
-            }
-        }
-        text_len
-    }
-
-    let mut nodes: Vec<tree::DensityNode> = vec![];
-
-    for node in body.descendants() {
-        if node.value().is_element() {
-            match node.value().as_element().unwrap().name() {
-                "script" => continue,
-                "noscript" => continue,
-                "style" => continue,
-                _ => {}
-            }
-            // println!("[{:?}] Node: {:?}", node.id(), node.value());
-
-            let mut total_valuable_nodes: u32 = 0;
-            let mut total_text_len: u32 = 0;
-            let mut total_href_tags: u32 = 0;
-            for desc in node.descendants() {
-                match desc.value() {
-                    Node::Element(element) => match element.name() {
-                        "script" => {}
-                        "noscript" => {}
-                        "style" => {}
-                        "comment" => {}
-                        "a" => {
-                            total_valuable_nodes += 1;
-                            total_href_tags += 1;
-                        }
-                        _ => {
-                            total_valuable_nodes += 1;
-                        }
-                    },
-                    Node::Text(text) => {
-                        total_text_len += text.trim().len() as u32;
-                    }
-                    _ => {}
-                }
-            }
-
-            let descendant_nodes_count = node.descendants().count();
-            let text_len = node_text_len(node);
-            let density = total_text_len as f32 / total_valuable_nodes as f32;
-
-            if density > 0.0 {
-                println!("Node name: {:?}", node.value());
-                println!("Node nodes: {:?}", node.descendants());
-                println!("Node nodes: {}", descendant_nodes_count);
-                println!("Node text len: {:?}", text_len);
-                println!("Node valuable nodes: {}", total_valuable_nodes);
-                println!("Node href tags: {}", total_href_tags);
-                println!("Node total text len: {}", total_text_len);
-                println!("Density: {}", density);
-                println!("=========================");
-                nodes.push(tree::DensityNode {
-                    node_id: node.id(),
-                    char_count: text_len,
-                    tag_count: descendant_nodes_count as u32,
-                    link_char_count: 0,
-                    link_tag_count: 0,
-                    density,
-                });
-            }
-        }
-    }
-
-    // fn calculate_node(node: DCNode, bd: &ElementRef, nodes: &mut Vec<DCNode>) {
-    //     for subnode in bd.tree().get(node.node_id).unwrap().children() {
-    //         println!("[{:?}]Subnode: {:?}", subnode.id(), subnode.value());
-    //         match subnode.value() {
-    //             Node::Text(text) => {}
-    //             Node::Element(element) => {
-    //                 // element.id
-    //                 println!("Element: {:?}", element);
-    //                 calculate_node(DCNode::new(subnode.id()), bd, nodes);
-    //             }
-    //             _ => {}
-    //         }
-    //         println!("Subnode: {:?}", subnode.value());
-    //         // match subnode.value() {};
-    //     }
-    // }
-
-    // calculate_node(dc_node, body, &mut nodes);
-
-    42
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils;
+    use scraper::Selector;
 
     // static default_page_content: Result<String, DomContentError> =
     //     { read_file("html/sas-bankruptcy-protection.html") };
@@ -199,22 +70,22 @@ mod tests {
 
     #[test]
     fn test_load_file() {
-        let content = read_file("html/sas-bankruptcy-protection.html");
+        let content = utils::read_file("html/sas-bankruptcy-protection.html");
         assert_eq!(content.is_ok(), true);
         assert_eq!(content.unwrap().len() > 0, true);
     }
 
     #[test]
     fn test_build_dom() {
-        let content = read_file("html/sas-bankruptcy-protection.html").unwrap();
-        let document = build_dom(content.as_str());
+        let content = utils::read_file("html/sas-bankruptcy-protection.html").unwrap();
+        let document = utils::build_dom(content.as_str());
         assert_eq!(document.errors.len() == 0, true);
     }
 
     #[test]
     fn test_build_density_tree() {
-        let content = read_file("html/test_1.html").unwrap();
-        let document = build_dom(content.as_str());
+        let content = utils::read_file("html/test_1.html").unwrap();
+        let document = utils::build_dom(content.as_str());
 
         let body_selector = Selector::parse("body").unwrap();
         let body = &document.select(&body_selector).next().unwrap().to_owned();
@@ -224,19 +95,9 @@ mod tests {
 
         let mut density_tree = tree::DensityTree::new(body.id());
 
-        build_density_tree(node, &mut density_tree.tree.root_mut());
-        println!("Tree: {:#?}", density_tree);
-    }
-
-    // #[test]
-    #[allow(dead_code)]
-    fn test_extract_body() {
-        let content = read_file("html/test_1.html").unwrap();
-        // let content = read_file("html/sas-bankruptcy-protection.html").unwrap();
-        let document = build_dom(content.as_str());
-
-        let result = compute_density_old(&document);
-
-        assert_eq!(result, 41);
+        build_density_tree(node, &mut density_tree.tree.root_mut(), node_id, 1);
+        // println!("Tree: {:#?}", density_tree);
+        density_tree.pretty_print();
+        // println!("DensityTree: {:?}", density_tree);
     }
 }

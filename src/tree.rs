@@ -1,4 +1,4 @@
-use ego_tree::{NodeId, Tree};
+use ego_tree::{NodeId, NodeRef, Tree};
 
 #[derive(Debug)]
 pub struct DensityTree {
@@ -12,7 +12,17 @@ impl DensityTree {
         }
     }
 
-    pub fn append(&mut self) {}
+    fn recursive(&self, node: NodeRef<DensityNode>, depth: usize) {
+        for child in node.children() {
+            let dashes = std::iter::repeat("-").take(depth).collect::<String>();
+            println!("{} child: {:#?}", dashes, child.value());
+            self.recursive(child, depth + 1);
+        }
+    }
+
+    pub fn pretty_print(&mut self) {
+        self.recursive(self.tree.root().into(), 1);
+    }
 }
 
 #[derive(Debug, Clone)]
