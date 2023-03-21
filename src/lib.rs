@@ -4,9 +4,42 @@ use scraper;
 mod density_tree;
 mod utils;
 
+#[derive(Debug)]
+struct Results {
+    node_id: ego_tree::NodeId,
+    density: f32,
+}
+
 fn prepend_dash_n_times(n: usize) -> String {
     let dashes = std::iter::repeat("-").take(n).collect::<String>();
     format!("{}", dashes)
+}
+
+#[inline]
+fn normalize_denominator(value: u32) -> f32 {
+    match value {
+        0 => 1.0,
+        _ => value as f32,
+    }
+}
+
+fn top_results(dt: density_tree::DensityTree) -> Vec<Results> {
+    let mut value = dt
+        .tree
+        .values()
+        .filter(|x| x.density.gt(&0.0))
+        .map(|n| Results {
+            node_id: n.node_id,
+            density: n.density,
+        })
+        .collect::<Vec<Results>>();
+
+    value.sort_by(|a, b| {
+        a.density
+            .partial_cmp(&b.density)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    value
 }
 
 pub fn composite_text_density(
@@ -16,44 +49,19 @@ pub fn composite_text_density(
     link_tag_count: u32,
     body_tag_node: density_tree::DensityNode,
 ) -> f32 {
+    if char_count == 0 {
+        return 0.0;
+    }
     let ci = char_count as f32;
-    let ti = {
-        if tag_count == 0 {
-            1
-        } else {
-            tag_count
-        }
-    } as f32;
-    let nlci = {
-        let tmp = char_count - link_char_count;
-        if tmp <= 0 {
-            1
-        } else {
-            tmp
-        }
-    } as f32;
-    let lci = {
-        if link_char_count == 0 {
-            1
-        } else {
-            link_char_count
-        }
-    } as f32;
-    let cb = {
-        if body_tag_node.char_count == 0 {
-            1
-        } else {
-            body_tag_node.char_count
-        }
-    } as f32;
+    let ti = normalize_denominator(tag_count);
+    let nlci = normalize_denominator(char_count - link_char_count);
+    let lci = normalize_denominator(link_char_count);
+    let cb = normalize_denominator(body_tag_node.char_count);
     let lcb = body_tag_node.link_char_count as f32;
-    let lti = {
-        if link_tag_count == 0 {
-            1
-        } else {
-            link_tag_count
-        }
-    } as f32;
+    let lti = normalize_denominator(link_tag_count);
+
+    // checks
+    assert_eq!(nlci > 0.0, true);
 
     let density = ci / ti;
 
@@ -61,9 +69,18 @@ pub fn composite_text_density(
     let ln_2 = (lcb / cb) * ci;
     let e = std::f32::consts::E;
 
+    assert_eq!(ln_1 >= 0.0, true);
+    assert_eq!(ln_2 >= 0.0, true);
+    // println!("ln(x), x = {}", ln_1 + ln_2 + e);
+
     let log_base = (ln_1 + ln_2 + e).ln();
-    let value = (ci / lci) * (ti / lti);
-    println!("log_base {}", log_base);
+    // println!("log_base {}", log_base);
+
+    let value = (ci / lcb) * (ti / lti);
+    println!(
+        "value: {} density: {} log_base: {}",
+        value, density, log_base
+    );
     let result = value.log(log_base) * density;
 
     result
@@ -170,25 +187,6 @@ pub fn build_density_tree(
     println!("{}", dashes);
 }
 
-pub fn calculate_nodes(
-    node: ego_tree::NodeRef<scraper::node::Node>,
-    density_node: &mut ego_tree::NodeMut<density_tree::DensityNode>,
-    depth: usize,
-) {
-    for child in density_node.tree().values_mut().rev() {
-        let current_node = node.tree().get(child.node_id).unwrap();
-
-        if let Some(parent_node) = current_node.parent() {
-            println!("Parent: {:?}", parent_node.value());
-        }
-
-        child.char_count = current_node.value().as_text().unwrap().len() as u32;
-        println!("Child: {:?}", child);
-    }
-
-    println!("Node: {:?}, Depth: {}", node.value(), depth);
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -235,6 +233,12 @@ mod tests {
 
         calculate_density_tree(&mut density_tree);
         // density_tree.pretty_print();
-        // calculate_nodes(node, &mut density_tree.tree.root_mut(), 1)
+        let results = top_results(density_tree);
+        println!("R: {:?}", results);
+        let node_id = results.last().unwrap().node_id;
+        println!(
+            "Result node: {:?}",
+            node.tree().get(node_id).unwrap().value()
+        );
     }
 }
