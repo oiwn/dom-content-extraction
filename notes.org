@@ -4,3 +4,4 @@
 ** DONE move alorythm code to the density_tree.rs
 ** DONE implement from_document() method for DensityTree
 ** DONE debug pretty printer for DensityTree
+** DONE remove possibly problematic htmls
