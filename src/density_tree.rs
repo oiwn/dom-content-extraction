@@ -11,7 +11,6 @@ fn normalize_denominator(value: u32) -> f32 {
     }
 }
 
-#[derive(Debug)]
 pub struct DensityTree {
     pub tree: Tree<DensityNode>,
 }
@@ -182,17 +181,26 @@ impl<'a> DensityTree {
             parent.value().link_char_count += link_char_count;
         }
     }
+}
 
-    pub fn pretty_print(&mut self) {
-        fn recursive(node: NodeRef<DensityNode>, depth: usize) {
+impl std::fmt::Debug for DensityTree {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn pretty_print(
+            f: &mut std::fmt::Formatter<'_>,
+            node: NodeRef<DensityNode>,
+            depth: usize,
+        ) {
             for child in node.children() {
-                let dashes = std::iter::repeat("-").take(depth).collect::<String>();
-                println!("{} child: {:#?}", dashes, child.value());
-                recursive(child, depth + 1);
+                let dashes =
+                    std::iter::repeat(" ").take(2 * depth).collect::<String>();
+                let _ = writeln!(f, "{}{:?}", dashes, child.value());
+                pretty_print(f, child, depth + 1);
             }
         }
 
-        recursive(self.tree.root().into(), 1);
+        writeln!(f, "DensityTree {{")?;
+        pretty_print(f, self.tree.root(), 1);
+        writeln!(f, "}}")
     }
 }
 

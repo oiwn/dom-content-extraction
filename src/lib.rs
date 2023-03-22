@@ -61,24 +61,16 @@ mod tests {
 
     #[test]
     fn test_build_density_tree() {
-        // let content = utils::read_file("html/sas-bankruptcy-protection.html").unwrap();
+        // let content =
+        //     utils::read_file("html/sas-bankruptcy-protection.html").unwrap();
         let content = utils::read_file("html/test_1.html").unwrap();
         let document = utils::build_dom(content.as_str());
 
-        // let body_selector = Selector::parse("body").unwrap();
-        // let body = &document.select(&body_selector).next().unwrap().to_owned();
-
-        // let node_id = body.id();
-        // let node = body.tree().get(node_id).unwrap();
-
-        // let mut density_tree = density_tree::DensityTree::new(body.id());
-
-        // build_density_tree(node, &mut density_tree.tree.root_mut(), 1);
         let dtree = density_tree::DensityTree::from_document(&document);
 
-        // calculate_density_tree(&mut density_tree);
+        println!("{:?}", dtree);
+
         // dtree.pretty_print();
-        // let results = top_results(dtree);
         let sorted_nodes = dtree.sorted_nodes();
         println!("R: {:?}", sorted_nodes);
         let node_id = sorted_nodes.last().unwrap().node_id;
