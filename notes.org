@@ -6,11 +6,11 @@
 ** DONE debug pretty printer for DensityTree
 ** DONE remove possibly problematic htmls
 ** DONE add some tests
-** TODO move density_tree.rs into lib.rs
+** DONE move density_tree.rs into lib.rs
 ** DONE move functions from util.rs iside tests, remove utils.rs
 ** DONE Remove thiserror, html_parser dependencies
 ** DONE move content of util module into lib.rs tests
 ** DONE add description to README.md
+** DONE github CI/CD
 ** TODO write some documentation
-** TODO github CI/CD
 ** TODO push it on crates.io
