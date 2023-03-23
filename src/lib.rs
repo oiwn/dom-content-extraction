@@ -1,5 +1,9 @@
 use ego_tree::{NodeId, NodeRef, Tree};
+use once_cell::sync::Lazy;
 use scraper::{Html, Selector};
+
+static BODY_SELECTOR: Lazy<Selector> =
+    Lazy::new(|| Selector::parse("body").unwrap());
 
 /// Prevend division by zero
 #[inline]
@@ -33,10 +37,8 @@ impl<'a> DensityTree {
     }
 
     pub fn from_document(document: &Html) -> Self {
-        // TODO: wrap it on once_cell
-        let body_selector = Selector::parse("body").unwrap();
         // TODO: process possible errors (when page is completely broken)
-        let body = &document.select(&body_selector).next().unwrap().to_owned();
+        let body = &document.select(&BODY_SELECTOR).next().unwrap().to_owned();
         // NOTE: there is usable value in document, such as error field
         let body_node_id = body.id();
         let body_node = body.tree().get(body_node_id).unwrap();
