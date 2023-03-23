@@ -8,12 +8,16 @@ pub enum DomContentError {
     UnableToReadFile(#[from] std::io::Error),
 }
 
-pub fn read_file(file_path: impl AsRef<path::Path>) -> Result<String, DomContentError> {
+#[allow(dead_code)]
+pub fn read_file(
+    file_path: impl AsRef<path::Path>,
+) -> Result<String, DomContentError> {
     let content: String =
         fs::read_to_string(file_path).map_err(DomContentError::UnableToReadFile)?;
     Ok(content)
 }
 
+#[allow(dead_code)]
 pub fn build_dom(html: &str) -> Html {
     let document: Html = Html::parse_document(html);
     document

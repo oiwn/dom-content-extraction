@@ -67,7 +67,8 @@ impl<'a> DensityTree {
         tag_count: u32,
         link_char_count: u32,
         link_tag_count: u32,
-        body_tag_node: DensityNode,
+        body_tag_char_count: u32,
+        body_tag_link_char_count: u32,
     ) -> f32 {
         if char_count == 0 {
             // can guess whole expression will be zero
@@ -77,8 +78,8 @@ impl<'a> DensityTree {
         let ti = normalize_denominator(tag_count);
         let nlci = normalize_denominator(char_count - link_char_count);
         let lci = normalize_denominator(link_char_count);
-        let cb = normalize_denominator(body_tag_node.char_count);
-        let lcb = body_tag_node.link_char_count as f32;
+        let cb = normalize_denominator(body_tag_char_count);
+        let lcb = body_tag_link_char_count as f32;
         let lti = normalize_denominator(link_tag_count);
 
         // checks
@@ -109,7 +110,8 @@ impl<'a> DensityTree {
                 node.tag_count,
                 node.link_char_count,
                 node.link_tag_count,
-                body_tag_node.clone(),
+                body_tag_node.char_count,
+                body_tag_node.link_char_count,
             );
         }
     }

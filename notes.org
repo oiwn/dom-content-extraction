@@ -5,3 +5,6 @@
 ** DONE implement from_document() method for DensityTree
 ** DONE debug pretty printer for DensityTree
 ** DONE remove possibly problematic htmls
+** DONE add some tests
+** TODO move density_tree.rs into lib.rs
+** TODO move content of util module into lib.rs tests
