@@ -8,3 +8,7 @@
 ** DONE add some tests
 ** TODO move density_tree.rs into lib.rs
 ** TODO move content of util module into lib.rs tests
+** TODO add description to README.md
+** TODO write some documentation
+** TODO github CI/CD
+** TODO push it on crates.io
