@@ -7,6 +7,8 @@
 ** DONE remove possibly problematic htmls
 ** DONE add some tests
 ** TODO move density_tree.rs into lib.rs
+** TODO move functions from util.rs iside tests, remove utils.rs
+** DONE Remove thiserror, html_parser dependencies
 ** TODO move content of util module into lib.rs tests
 ** TODO add description to README.md
 ** TODO write some documentation

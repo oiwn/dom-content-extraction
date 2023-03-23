@@ -2,7 +2,6 @@ use ego_tree;
 use scraper;
 
 mod density_tree;
-mod utils;
 
 pub fn get_node_by_id<'a>(
     node_id: ego_tree::NodeId,
@@ -29,16 +28,30 @@ pub fn get_node_text(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils;
 
-    fn load_content(test_file_name: &str) -> scraper::Html {
-        let content = utils::read_file(format!("html/{}", test_file_name)).unwrap();
-        utils::build_dom(content.as_str())
+    use scraper::Html;
+    use std::{fs, path};
+
+    pub fn read_file(
+        file_path: impl AsRef<path::Path>,
+    ) -> Result<String, std::io::Error> {
+        let content: String = fs::read_to_string(file_path)?;
+        Ok(content)
+    }
+
+    pub fn build_dom(html: &str) -> Html {
+        let document: Html = Html::parse_document(html);
+        document
+    }
+
+    fn load_content(test_file_name: &str) -> Html {
+        let content = read_file(format!("html/{}", test_file_name)).unwrap();
+        build_dom(content.as_str())
     }
 
     #[test]
     fn test_load_file() {
-        let content = utils::read_file("html/test_1.html");
+        let content = read_file("html/test_1.html");
         assert_eq!(content.is_ok(), true);
         assert_eq!(content.unwrap().len() > 0, true);
     }
@@ -97,8 +110,8 @@ mod tests {
 
     #[test]
     fn test_build_density_tree() {
-        let content = utils::read_file("html/test_1.html").unwrap();
-        let document = utils::build_dom(content.as_str());
+        let content = read_file("html/test_1.html").unwrap();
+        let document = build_dom(content.as_str());
 
         let dtree = density_tree::DensityTree::from_document(&document);
         assert_eq!(dtree.tree.values().count(), 52);
@@ -122,8 +135,8 @@ mod tests {
 
     #[test]
     fn test_result_node_text() {
-        let content = utils::read_file("html/test_1.html").unwrap();
-        let document = utils::build_dom(content.as_str());
+        let content = read_file("html/test_1.html").unwrap();
+        let document = build_dom(content.as_str());
 
         let dtree = density_tree::DensityTree::from_document(&document);
         let sorted_nodes = dtree.sorted_nodes();
