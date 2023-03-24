@@ -37,7 +37,7 @@ impl<'a> DensityTree {
     }
 
     pub fn from_document(document: &Html) -> Self {
-        // TODO: process possible errors (when page is completely broken)
+        // NOTE: process possible errors (when page is completely broken)
         let body = &document.select(&BODY_SELECTOR).next().unwrap().to_owned();
         // NOTE: there is usable value in document, such as error field
         let body_node_id = body.id();
@@ -241,11 +241,11 @@ pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{fs, path};
+    use std::{fs, io, path};
 
     pub fn read_file(
         file_path: impl AsRef<path::Path>,
-    ) -> Result<String, std::io::Error> {
+    ) -> Result<String, io::Error> {
         let content: String = fs::read_to_string(file_path)?;
         Ok(content)
     }

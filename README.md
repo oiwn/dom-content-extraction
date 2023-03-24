@@ -9,7 +9,7 @@ use density_tree;
 
 let dtree = density_tree:DensityTree::from_document(&document); // &scraper::Html 
 let sorted_nodes = dtree.sorted_nodes();
-let node_id = sorted_nodes.last().unwrap();
+let node_id = sorted_nodes.last().unwrap().node_id;
 
 println!("{}", density_tree::get_node_text(node_id, &document));
 ```

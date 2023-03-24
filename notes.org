@@ -14,5 +14,8 @@
 ** DONE github CI/CD
 ** DONE start to add benchmarks
 ** DONE once_cell for body selector
+** DONE better benchmarks using real page examples
+- [X] use zip archive to extract file
+- [X] write becnch function to load content from file in zip archive
 ** TODO write some documentation
 ** TODO push it on crates.io
