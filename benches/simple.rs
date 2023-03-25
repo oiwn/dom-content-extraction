@@ -99,12 +99,34 @@ fn benchmark_real_file_density_tree_calculation_and_sort(c: &mut Criterion) {
     });
 }
 
+fn benchmark_node_text_extraction(c: &mut Criterion) {
+    let content = read_file_content_from_zip(
+        "html/pages.zip",
+        "pages/sas-bankruptcy-protection.html",
+    )
+    .unwrap();
+    let document = build_dom(content.as_str());
+
+    let dtree = DensityTree::from_document(&document);
+    let sorted_nodes = dtree.sorted_nodes();
+    let last_node_id = sorted_nodes.last().unwrap().node_id;
+
+    c.bench_function("real_file_density_tree_sort_nodes", |b| {
+        b.iter(|| {
+            let node_text =
+                get_node_text(black_box(last_node_id), black_box(&document));
+            assert_eq!(node_text.len(), 3065);
+        })
+    });
+}
+
 criterion_group!(
     benches,
     benchmark_test_1_html_dom_content_extaction,
     benchmark_real_file_dom_content_extraction,
     benchmark_real_file_density_tree_calculation,
     benchmark_real_file_density_tree_calculation_and_sort,
+    benchmark_node_text_extraction,
 );
 
 criterion_main!(benches);

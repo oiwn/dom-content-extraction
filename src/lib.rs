@@ -5,7 +5,7 @@ use scraper::{Html, Selector};
 static BODY_SELECTOR: Lazy<Selector> =
     Lazy::new(|| Selector::parse("body").unwrap());
 
-/// Prevend division by zero
+/// Prevend division by zero and convert into f32
 #[inline]
 fn normalize_denominator(value: u32) -> f32 {
     match value {
@@ -30,12 +30,14 @@ pub struct DensityNode {
 }
 
 impl<'a> DensityTree {
+    /// Create new Density tree with root node with type NodeId
     pub fn new(node_id: NodeId) -> Self {
         Self {
             tree: Tree::new(DensityNode::new(node_id)),
         }
     }
 
+    /// Create and calculate density tree from scraper::Html DOM tree
     pub fn from_document(document: &Html) -> Self {
         // NOTE: process possible errors (when page is completely broken)
         let body = &document.select(&BODY_SELECTOR).next().unwrap().to_owned();
@@ -49,6 +51,8 @@ impl<'a> DensityTree {
         density_tree
     }
 
+    /// Sort nodes in ascendign order return them as vector, also
+    /// skip nodes with zero density
     pub fn sorted_nodes(&'a self) -> Vec<&'a DensityNode> {
         let mut nodes = self
             .tree
@@ -63,6 +67,7 @@ impl<'a> DensityTree {
         nodes
     }
 
+    /// Calculate composite text density index
     pub fn composite_text_density(
         char_count: u32,
         tag_count: u32,
@@ -103,6 +108,7 @@ impl<'a> DensityTree {
         result
     }
 
+    // Run computation process of density for each tree node
     pub fn calculate_density_tree(&mut self) {
         let body_tag_node = self.tree.root().value().clone();
         for node in self.tree.values_mut() {
@@ -117,6 +123,10 @@ impl<'a> DensityTree {
         }
     }
 
+    // Recursively build ego_tree::Tree
+    // This structure separated from tree scraper::Html,
+    // but same NodeId used, so it's possible to get document
+    // node from scraper::Html
     pub fn build_density_tree(
         node: ego_tree::NodeRef<scraper::node::Node>,
         density_node: &mut ego_tree::NodeMut<DensityNode>,
@@ -187,6 +197,7 @@ impl<'a> DensityTree {
 }
 
 impl std::fmt::Debug for DensityTree {
+    // Format tree with identation
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn pretty_print(
             f: &mut std::fmt::Formatter<'_>,
@@ -208,6 +219,7 @@ impl std::fmt::Debug for DensityTree {
 }
 
 impl DensityNode {
+    // Crate root node from NodeId with zero values
     pub fn new(node_id: NodeId) -> Self {
         Self {
             node_id,
@@ -219,6 +231,9 @@ impl DensityNode {
         }
     }
 }
+
+/// Helper function to extract node with id: `node_id` from scraper::Html
+#[inline]
 pub fn get_node_by_id<'a>(
     node_id: NodeId,
     document: &'a Html,
@@ -226,13 +241,17 @@ pub fn get_node_by_id<'a>(
     document.tree.get(node_id).unwrap()
 }
 
+/// Helper function to extract all text from scraper::Html from all descendants
+/// nodes
 pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
     let mut text: Vec<String> = vec![];
-    let root_node = document.tree.get(node_id).unwrap();
+    let root_node = get_node_by_id(node_id, document);
     for node in root_node.descendants() {
         if let Some(txt) = node.value().as_text() {
             let clean_text = txt.trim();
-            text.push(clean_text.to_string());
+            if clean_text.len() > 0 {
+                text.push(clean_text.to_string());
+            }
         }
     }
     text.join(" ")

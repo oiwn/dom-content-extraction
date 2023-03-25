@@ -20,5 +20,8 @@
 ** TODO measure coverage using gcov
 - [X] Makefile to run gcov
 - [X] check
-** TODO write some documentation
+** DONE write some documentation
 ** TODO push it on crates.io
+** TODO coverage should be 100%
+** DONE when collecting text from node, skip empty trimmed strings
+** usize instead of u32?
