@@ -1,3 +1,4 @@
+#![crate_name = "dom_content_extraction"]
 use ego_tree::{NodeId, NodeRef, Tree};
 use once_cell::sync::Lazy;
 use scraper::{Html, Selector};
@@ -5,8 +6,8 @@ use scraper::{Html, Selector};
 static BODY_SELECTOR: Lazy<Selector> =
     Lazy::new(|| Selector::parse("body").unwrap());
 
-/// Prevend division by zero and convert into f32
-#[inline]
+/// Prevent division by zero and convert integers into f32
+#[inline(always)]
 fn normalize_denominator(value: u32) -> f32 {
     match value {
         0 => 1.0,
@@ -30,7 +31,7 @@ pub struct DensityNode {
 }
 
 impl<'a> DensityTree {
-    /// Create new Density tree with root node with type NodeId
+    /// Create new Density tree with single root node
     pub fn new(node_id: NodeId) -> Self {
         Self {
             tree: Tree::new(DensityNode::new(node_id)),
@@ -79,17 +80,18 @@ impl<'a> DensityTree {
         if char_count == 0 {
             // can guess whole expression will be zero
             return 0.0;
-        }
+        };
         let ci = char_count as f32;
         let ti = normalize_denominator(tag_count);
         let nlci = normalize_denominator(char_count - link_char_count);
-        let lci = normalize_denominator(link_char_count);
+        // let lci = normalize_denominator(link_char_count);
+        let lci = link_char_count as f32;
         let cb = normalize_denominator(body_tag_char_count);
         let lcb = body_tag_link_char_count as f32;
         let lti = normalize_denominator(link_tag_count);
 
         // checks
-        assert_eq!(nlci > 0.0, true);
+        debug_assert!(nlci > 0.0);
 
         let density = ci / ti;
 
@@ -97,18 +99,16 @@ impl<'a> DensityTree {
         let ln_2 = (lcb / cb) * ci;
         let e = std::f32::consts::E;
 
-        assert_eq!(ln_1 >= 0.0, true);
-        assert_eq!(ln_2 >= 0.0, true);
+        debug_assert!(ln_1 >= 0.0);
+        debug_assert!(ln_2 >= 0.0);
 
         let log_base = (ln_1 + ln_2 + e).ln();
 
         let value = (ci / lcb) * (ti / lti);
-        let result = value.log(log_base) * density;
-
-        result
+        value.log(log_base) * density
     }
 
-    // Run computation process of density for each tree node
+    /// Run computation process of density for each tree node
     pub fn calculate_density_tree(&mut self) {
         let body_tag_node = self.tree.root().value().clone();
         for node in self.tree.values_mut() {
@@ -123,14 +123,14 @@ impl<'a> DensityTree {
         }
     }
 
-    // Recursively build ego_tree::Tree
-    // This structure separated from tree scraper::Html,
-    // but same NodeId used, so it's possible to get document
-    // node from scraper::Html
+    /// Recursively build ego_tree::Tree
+    /// This structure separated from tree scraper::Html,
+    /// but same NodeId used, so it's possible to get document
+    /// node from scraper::Html
     pub fn build_density_tree(
         node: ego_tree::NodeRef<scraper::node::Node>,
         density_node: &mut ego_tree::NodeMut<DensityNode>,
-        depth: usize,
+        _depth: usize,
     ) {
         for child in node.children() {
             // some nodes makes no sense
@@ -154,7 +154,7 @@ impl<'a> DensityTree {
 
             let child_density_node = DensityNode::new(child.id());
             let mut te = density_node.append(child_density_node);
-            Self::build_density_tree(child, &mut te, depth + 1);
+            Self::build_density_tree(child, &mut te, _depth + 1);
         }
 
         match node.value() {
@@ -181,18 +181,18 @@ impl<'a> DensityTree {
         if tag_count > 0 {
             density_node.value().density = density_node.value().char_count as f32
                 / density_node.value().tag_count as f32;
-        }
+        };
 
         if node.parent().unwrap().value().as_element().unwrap().name() == "a" {
             link_char_count += char_count;
-        }
+        };
 
         if let Some(mut parent) = density_node.parent() {
             parent.value().char_count += char_count;
             parent.value().tag_count += tag_count;
             parent.value().link_tag_count += link_tag_count;
             parent.value().link_char_count += link_char_count;
-        }
+        };
     }
 }
 
@@ -205,8 +205,7 @@ impl std::fmt::Debug for DensityTree {
             depth: usize,
         ) {
             for child in node.children() {
-                let dashes =
-                    std::iter::repeat(" ").take(2 * depth).collect::<String>();
+                let dashes = " ".repeat(2 * depth);
                 let _ = writeln!(f, "{}{:?}", dashes, child.value());
                 pretty_print(f, child, depth + 1);
             }
@@ -233,11 +232,12 @@ impl DensityNode {
 }
 
 /// Helper function to extract node with id: `node_id` from scraper::Html
+/// document
 #[inline]
-pub fn get_node_by_id<'a>(
+pub fn get_node_by_id(
     node_id: NodeId,
-    document: &'a Html,
-) -> ego_tree::NodeRef<'a, scraper::node::Node> {
+    document: &Html,
+) -> ego_tree::NodeRef<'_, scraper::node::Node> {
     document.tree.get(node_id).unwrap()
 }
 
@@ -249,7 +249,7 @@ pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
     for node in root_node.descendants() {
         if let Some(txt) = node.value().as_text() {
             let clean_text = txt.trim();
-            if clean_text.len() > 0 {
+            if !clean_text.is_empty() {
                 text.push(clean_text.to_string());
             }
         }
@@ -370,5 +370,27 @@ mod tests {
         let sorted_nodes = dtree.sorted_nodes();
         let node_id = sorted_nodes.last().unwrap().node_id;
         assert_eq!(get_node_text(node_id, &document).len(), 200);
+    }
+
+    #[test]
+    fn test_print_dtree() {
+        let content = read_file("html/test_2.html").unwrap();
+        let document = build_dom(content.as_str());
+
+        let dtree = DensityTree::from_document(&document);
+
+        assert_eq!(format!("{:?}", dtree).lines().count(), 18);
+    }
+
+    #[test]
+    fn test_leftovers() {
+        let content = read_file("html/test_4.html").unwrap();
+        let document = build_dom(content.as_str());
+
+        let dtree = DensityTree::from_document(&document);
+        let sorted_nodes = dtree.sorted_nodes();
+        let node_id = sorted_nodes.last().unwrap().node_id;
+
+        assert_eq!(format!("{:?}", node_id), "NodeId(12)");
     }
 }

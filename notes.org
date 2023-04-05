@@ -17,11 +17,13 @@
 ** DONE better benchmarks using real page examples
 - [X] use zip archive to extract file
 - [X] write becnch function to load content from file in zip archive
-** TODO measure coverage using gcov
+** DONE measure coverage using gcov
 - [X] Makefile to run gcov
 - [X] check
 ** DONE write some documentation
-** TODO push it on crates.io
+** DONE push it on crates.io
 ** TODO coverage should be 100%
+** TODO add clippy to github ci pipeline
+** TODO make clippy happy
 ** DONE when collecting text from node, skip empty trimmed strings
 ** usize instead of u32?
