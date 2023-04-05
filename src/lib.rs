@@ -142,7 +142,7 @@ impl<'a> DensityTree {
                         || elem.name() == "style"
                     {
                         continue;
-                    }
+                    };
                 }
                 scraper::Node::Comment(_) => {
                     continue;
@@ -169,7 +169,7 @@ impl<'a> DensityTree {
                 if elem.name() == "a" {
                     let link_tag_count = 1;
                     density_node.value().link_tag_count += link_tag_count;
-                }
+                };
             }
             _ => {}
         }
@@ -252,8 +252,8 @@ pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
             let clean_text = txt.trim();
             if !clean_text.is_empty() {
                 text.push(clean_text.to_string());
-            }
-        }
+            };
+        };
     }
     text.join(" ")
 }
