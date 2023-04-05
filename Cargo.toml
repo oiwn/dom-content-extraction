@@ -1,6 +1,25 @@
 [package]
 name = "dom-content-extraction"
-version = "0.1.0"
+version = "0.2.0"
+
+description = "Rust implementation of Content extraction via text density paper"
+license = "MPL-2.0"
+documentation = "https://github.com/oiwn/dom-content-extraction"
+homepage = "https://github.com/oiwn/dom-content-extraction"
+repository = "https://github.com/oiwn/dom-content-extraction"
+readme = "README.md"
+keywords = ["dom-text-density"]
+categories = ["dom-text-densitys"]
+exclude = [
+    "tmp/*",
+    # "benches/*",
+    "html/*",
+    ".github/*",
+    ".gitignore",
+    ".tmuxp.yaml",
+    "notes.org"
+]
+
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

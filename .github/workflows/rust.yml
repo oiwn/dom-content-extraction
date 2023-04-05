@@ -33,3 +33,5 @@ jobs:
         command: test
         args: --verbose
 
+    - name: Run Clippy
+      run: cargo clippy -- -D warnings
