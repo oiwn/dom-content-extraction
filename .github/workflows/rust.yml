@@ -37,35 +37,3 @@ jobs:
         command: test
         args: --verbose
 
-    - name: Run tests
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --all-features --no-fail-fast  # Customize args for your own needs
-      env:
-        CARGO_INCREMENTAL: '0'
-        RUSTFLAGS: |
-          -Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code
-          -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests -Cinstrument-coverage
-        RUSTDOCFLAGS: |
-          -Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code
-          -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests -Cinstrument-coverage'
-
-    - name: Gather coverage data
-      id: coverage
-      uses: actions-rs/grcov@v0.1
-
-    - name: Report coverage in PR status for the current commit
-      if: github.ref_name != 'main'
-      run: |
-        set -eu
-        total=$(cat ${COV_REPORT_DIR}/badges/flat.svg | egrep '<title>coverage: ' | cut -d: -f 2 | cut -d% -f 1 | sed 's/ //g')
-        curl -s "https://brouberol:${GITHUB_TOKEN}@api.github.com/repos/brouberol/bo/statuses/${COMMIT_SHA}" -d "{\"state\": \"success\",\"target_url\": \"https://github.com/brouberol/bo/pull/${PULL_NUMBER}/checks?check_run_id=${RUN_ID}\",\"description\": \"${total}%\",\"context\": \"Measured coverage\"}"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-        RUN_ID: ${{ github.run_id }}
-        PULL_NUMBER: ${{ github.event.pull_request.number }}
-        COV_REPORT_DIR: ${{ steps.coverage.outputs.report }}      
-      
-
