@@ -7,7 +7,7 @@ static BODY_SELECTOR: Lazy<Selector> =
     Lazy::new(|| Selector::parse("body").unwrap());
 
 /// Prevent division by zero and convert integers into f32
-#[inline(always)]
+#[inline]
 fn normalize_denominator(value: u32) -> f32 {
     match value {
         0 => 1.0,
@@ -77,14 +77,15 @@ impl<'a> DensityTree {
         body_tag_char_count: u32,
         body_tag_link_char_count: u32,
     ) -> f32 {
+        // can guess whole expression will be zero
         if char_count == 0 {
-            // can guess whole expression will be zero
             return 0.0;
         };
+
+        // labeled same was as in paper's formula
         let ci = char_count as f32;
         let ti = normalize_denominator(tag_count);
         let nlci = normalize_denominator(char_count - link_char_count);
-        // let lci = normalize_denominator(link_char_count);
         let lci = link_char_count as f32;
         let cb = normalize_denominator(body_tag_char_count);
         let lcb = body_tag_link_char_count as f32;
@@ -277,6 +278,12 @@ mod tests {
     fn load_content(test_file_name: &str) -> Html {
         let content = read_file(format!("html/{}", test_file_name)).unwrap();
         build_dom(content.as_str())
+    }
+
+    #[test]
+    fn test_normalize_denominator() {
+        assert_eq!(normalize_denominator(32), 32.0);
+        assert_eq!(normalize_denominator(0), 1.0);
     }
 
     #[test]
