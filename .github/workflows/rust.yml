@@ -20,6 +20,7 @@ jobs:
         profile: minimal
         toolchain: nightly
         override: true
+        components: clippy
 
     - name: Build
       uses: actions-rs/cargo@v1
