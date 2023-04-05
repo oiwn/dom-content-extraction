@@ -18,8 +18,9 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: stable
+        toolchain: nightly
         override: true
+        components: clippy
 
     - name: Build
       uses: actions-rs/cargo@v1
@@ -27,11 +28,12 @@ jobs:
         command: build
         args: --verbose
 
+    - name: Run Clippy
+      run: cargo clippy -- -D warnings
+
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:
         command: test
         args: --verbose
 
-    - name: Run Clippy
-      run: cargo clippy -- -D warnings

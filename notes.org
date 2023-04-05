@@ -23,7 +23,8 @@
 ** DONE write some documentation
 ** DONE push it on crates.io
 ** TODO coverage should be 100%
-** TODO add clippy to github ci pipeline
-** TODO make clippy happy
+** DONE add clippy to github ci pipeline
+** DONE make clippy happy
 ** DONE when collecting text from node, skip empty trimmed strings
+** TODO integrate trampoline or gcov into the github ci pipeline
 ** usize instead of u32?

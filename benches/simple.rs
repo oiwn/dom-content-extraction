@@ -111,7 +111,7 @@ fn benchmark_node_text_extraction(c: &mut Criterion) {
     let sorted_nodes = dtree.sorted_nodes();
     let last_node_id = sorted_nodes.last().unwrap().node_id;
 
-    c.bench_function("real_file_density_tree_sort_nodes", |b| {
+    c.bench_function("real_file_density_tree_sort_and_text_extraction", |b| {
         b.iter(|| {
             let node_text =
                 get_node_text(black_box(last_node_id), black_box(&document));
