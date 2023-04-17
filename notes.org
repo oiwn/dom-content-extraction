@@ -30,4 +30,5 @@
 ** DONE make it possible to use scraper dep from within (like in ndarray-rand)
 ** DONE update ci.yml in workflows
 ** DONE upgrade scraper version
+** TODO cargo publish workflow
 ** usize instead of u32?
