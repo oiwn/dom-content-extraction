@@ -1,17 +1,23 @@
-name: Publish to crates.io
+name: Publish on crates.io
 
 on:
-  push:
-    tags:
-      - 'v*'
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
 
 jobs:
   publish:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        ref: main
 
     - name: Setup Rust
       uses: actions-rs/toolchain@v1
@@ -19,6 +25,7 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
-
+     
     - name: Publish to crates.io
+      if: steps.check_version.outputs.version_updated == 'true'
       run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
