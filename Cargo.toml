@@ -1,6 +1,6 @@
 [package]
 name = "dom-content-extraction"
-version = "0.2.3"
+version = "0.2.4"
 
 description = "Rust implementation of Content extraction via text density paper"
 license = "MPL-2.0"
