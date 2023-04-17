@@ -1,7 +1,11 @@
 #![crate_name = "dom_content_extraction"]
+use crate::scraper::{Html, Selector};
 use ego_tree::{NodeId, NodeRef, Tree};
 use once_cell::sync::Lazy;
-use scraper::{Html, Selector};
+
+pub mod scraper {
+    pub use scraper::*;
+}
 
 static BODY_SELECTOR: Lazy<Selector> =
     Lazy::new(|| Selector::parse("body").unwrap());

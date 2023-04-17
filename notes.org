@@ -27,4 +27,8 @@
 ** DONE make clippy happy
 ** DONE when collecting text from node, skip empty trimmed strings
 ** TODO integrate trampoline or gcov into the github ci pipeline
+** DONE make it possible to use scraper dep from within (like in ndarray-rand)
+** DONE update ci.yml in workflows
+** DONE upgrade scraper version
+** TODO cargo publish workflow
 ** usize instead of u32?
