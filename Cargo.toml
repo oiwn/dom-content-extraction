@@ -1,6 +1,6 @@
 [package]
 name = "dom-content-extraction"
-version = "0.2.6"
+version = "0.2.8"
 
 description = "Rust implementation of Content extraction via text density paper"
 license = "MPL-2.0"
@@ -9,7 +9,7 @@ homepage = "https://github.com/oiwn/dom-content-extraction"
 repository = "https://github.com/oiwn/dom-content-extraction"
 readme = "README.md"
 keywords = ["dom-text-density"]
-categories = ["dom-text-densitys"]
+categories = ["data-structures", "web-programming", "text-processing"]
 exclude = [
     "tmp/*",
     # "benches/*",
