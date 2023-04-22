@@ -19,10 +19,12 @@ fn normalize_denominator(value: u32) -> f32 {
     }
 }
 
+/// A tree representation of the text density of an HTML document.
 pub struct DensityTree {
     pub tree: Tree<DensityNode>,
 }
 
+/// A node in a `DensityTree` containing text density information.
 #[derive(Debug, Clone)]
 pub struct DensityNode {
     pub node_id: NodeId,
@@ -35,14 +37,14 @@ pub struct DensityNode {
 }
 
 impl<'a> DensityTree {
-    /// Create new Density tree with single root node
+    /// Creates a new `DensityTree` with a single root node.
     pub fn new(node_id: NodeId) -> Self {
         Self {
             tree: Tree::new(DensityNode::new(node_id)),
         }
     }
 
-    /// Create and calculate density tree from scraper::Html DOM tree
+    /// Creates and calculates a `DensityTree` from a `scraper::Html` DOM tree.
     pub fn from_document(document: &Html) -> Self {
         // NOTE: process possible errors (when page is completely broken)
         let body = &document.select(&BODY_SELECTOR).next().unwrap().to_owned();
@@ -56,8 +58,8 @@ impl<'a> DensityTree {
         density_tree
     }
 
-    /// Sort nodes in ascendign order return them as vector, also
-    /// skip nodes with zero density
+    /// Returns a vector of nodes sorted by density in ascending order.
+    /// Nodes with zero density are skipped.
     pub fn sorted_nodes(&'a self) -> Vec<&'a DensityNode> {
         let mut nodes = self
             .tree
@@ -72,7 +74,7 @@ impl<'a> DensityTree {
         nodes
     }
 
-    /// Calculate composite text density index
+    /// Calculates the composite text density index.
     pub fn composite_text_density(
         char_count: u32,
         tag_count: u32,
@@ -113,7 +115,7 @@ impl<'a> DensityTree {
         value.log(log_base) * density
     }
 
-    /// Run computation process of density for each tree node
+    /// Computes the density for each node in the tree.
     pub fn calculate_density_tree(&mut self) {
         let body_tag_node = self.tree.root().value().clone();
         for node in self.tree.values_mut() {
@@ -128,10 +130,9 @@ impl<'a> DensityTree {
         }
     }
 
-    /// Recursively build ego_tree::Tree
-    /// This structure separated from tree scraper::Html,
-    /// but same NodeId used, so it's possible to get document
-    /// node from scraper::Html
+    /// Recursively builds a density tree, separate from the `scraper::Html` tree.
+    /// Uses the same `NodeId` values, making it possible to retrieve document nodes
+    /// from `scraper::Html`.
     pub fn build_density_tree(
         node: ego_tree::NodeRef<scraper::node::Node>,
         density_node: &mut ego_tree::NodeMut<DensityNode>,
@@ -202,7 +203,7 @@ impl<'a> DensityTree {
 }
 
 impl std::fmt::Debug for DensityTree {
-    // Format tree with identation
+    /// Format tree with identation
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn pretty_print(
             f: &mut std::fmt::Formatter<'_>,
@@ -223,7 +224,7 @@ impl std::fmt::Debug for DensityTree {
 }
 
 impl DensityNode {
-    // Crate root node from NodeId with zero values
+    /// Creates a new `DensityNode` with the given `NodeId` and zero values.
     pub fn new(node_id: NodeId) -> Self {
         Self {
             node_id,
@@ -236,8 +237,16 @@ impl DensityNode {
     }
 }
 
-/// Helper function to extract node with id: `node_id` from scraper::Html
-/// document
+/// Helper function to extract a node with the given `NodeId` from a `scraper::Html` document.
+///
+/// # Arguments
+///
+/// * `node_id` - The `NodeId` of the node to extract.
+/// * `document` - A reference to the `scraper::Html` document.
+///
+/// # Returns
+///
+/// * An `ego_tree::NodeRef` representing the node with the specified `NodeId`.
 #[inline]
 pub fn get_node_by_id(
     node_id: NodeId,
@@ -246,8 +255,17 @@ pub fn get_node_by_id(
     document.tree.get(node_id).unwrap()
 }
 
-/// Helper function to extract all text from scraper::Html from all descendants
-/// nodes
+/// Helper function to extract all text from a `scraper::Html` document
+/// by collecting text from all descendant nodes of the node with the given `NodeId`.
+///
+/// # Arguments
+///
+/// * `node_id` - The `NodeId` of the node whose descendant text should be extracted.
+/// * `document` - A reference to the `scraper::Html` document.
+///
+/// # Returns
+///
+/// * A `String` containing the concatenated text from all descendant nodes of the specified node.
 pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
     let mut text: Vec<String> = vec![];
     let root_node = get_node_by_id(node_id, document);

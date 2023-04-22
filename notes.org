@@ -31,5 +31,6 @@
 ** DONE update ci.yml in workflows
 ** DONE upgrade scraper version
 ** TODO cargo publish workflow
-** make valid categories slugs for crates.io
+** Write documentation for each function
+** DONE make valid categories slugs for crates.io
 ** usize instead of u32?
