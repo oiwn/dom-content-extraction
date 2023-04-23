@@ -14,4 +14,4 @@ let node_id = sorted_nodes.last().unwrap().node_id;
 println!("{}", get_node_text(node_id, &document));
 ```
 
-Docomentations on [docs.rs](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)
+[Read documentation on docs.rs](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)
