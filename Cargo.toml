@@ -4,7 +4,7 @@ version = "0.2.8"
 
 description = "Rust implementation of Content extraction via text density paper"
 license = "MPL-2.0"
-documentation = "https://github.com/oiwn/dom-content-extraction"
+documentation = "https://docs.rs/dom-content-extraction/latest/dom_content_extraction/"
 homepage = "https://github.com/oiwn/dom-content-extraction"
 repository = "https://github.com/oiwn/dom-content-extraction"
 readme = "README.md"
