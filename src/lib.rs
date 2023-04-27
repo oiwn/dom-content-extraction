@@ -171,7 +171,11 @@ impl<'a> DensityTree {
             scraper::Node::Element(elem) => {
                 let tag_count = 1;
                 density_node.value().tag_count += tag_count;
-                if elem.name() == "a" {
+                // count buttons and selects as links as well
+                if elem.name() == "a"
+                    || elem.name() == "button"
+                    || elem.name() == "select "
+                {
                     let link_tag_count = 1;
                     density_node.value().link_tag_count += link_tag_count;
                 };

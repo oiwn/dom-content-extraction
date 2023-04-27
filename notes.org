@@ -34,5 +34,6 @@
 ** DONE Write documentation for each function
 ** DONE publish docs on docs.rs
 ** TODO add clear copy-pastable example into readme.md
+** DONE count select and button as links as well
 ** DONE make valid categories slugs for crates.io
 ** usize instead of u32?
