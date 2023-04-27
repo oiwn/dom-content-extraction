@@ -280,6 +280,31 @@ pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
     text.join(" ")
 }
 
+/// Helper function to extract all links (`href` attributes) from a `scraper::Html`
+/// document by collecting links from the node with the given `NodeId` and
+/// its descendants.
+///
+/// # Arguments
+///
+/// * `node_id` - The `NodeId` of the node whose descendant links should be extracted.
+/// * `document` - A reference to the `scraper::Html` document.
+///
+/// # Returns
+///
+/// * A `Vec<String>` containing the extracted links from the specified node and its descendants.
+pub fn get_node_links(node_id: NodeId, document: &Html) -> Vec<String> {
+    let mut links: Vec<String> = vec![];
+    let root_node = get_node_by_id(node_id, document);
+    for node in root_node.descendants() {
+        if let Some(elem) = node.value().as_element() {
+            if let Some(link) = elem.attr("href") {
+                links.push(link.trim().to_string());
+            };
+        };
+    }
+    links
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -391,7 +416,7 @@ mod tests {
     }
 
     #[test]
-    fn test_result_node_text() {
+    fn test_get_node_text() {
         let content = read_file("html/test_1.html").unwrap();
         let document = build_dom(content.as_str());
 
@@ -399,6 +424,17 @@ mod tests {
         let sorted_nodes = dtree.sorted_nodes();
         let node_id = sorted_nodes.last().unwrap().node_id;
         assert_eq!(get_node_text(node_id, &document).len(), 200);
+    }
+
+    #[test]
+    fn test_get_node_links() {
+        let content = read_file("html/test_1.html").unwrap();
+        let document = build_dom(content.as_str());
+
+        let dtree = DensityTree::from_document(&document);
+        let sorted_nodes = dtree.sorted_nodes();
+        let node_id = sorted_nodes.last().unwrap().node_id;
+        assert_eq!(get_node_links(node_id, &document).len(), 2);
     }
 
     #[test]

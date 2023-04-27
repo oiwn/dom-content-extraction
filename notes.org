@@ -32,6 +32,7 @@
 ** DONE upgrade scraper version
 ** TODO cargo publish workflow
 ** DONE Write documentation for each function
-** TODO publish docs on docs.rs
+** DONE publish docs on docs.rs
+** TODO add clear copy-pastable example into readme.md
 ** DONE make valid categories slugs for crates.io
 ** usize instead of u32?
