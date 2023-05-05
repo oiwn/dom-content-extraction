@@ -3,10 +3,12 @@ use crate::scraper::{Html, Selector};
 use ego_tree::{NodeId, NodeRef, Tree};
 use once_cell::sync::Lazy;
 
+/// Re-export scraper crate
 pub mod scraper {
     pub use scraper::*;
 }
 
+/// Selector for <body> tag
 static BODY_SELECTOR: Lazy<Selector> =
     Lazy::new(|| Selector::parse("body").unwrap());
 
@@ -37,7 +39,7 @@ pub struct DensityNode {
 }
 
 impl<'a> DensityTree {
-    /// Creates a new `DensityTree` with a single root node.
+    /// Create new `DensityTree` structure with a single root node.
     pub fn new(node_id: NodeId) -> Self {
         Self {
             tree: Tree::new(DensityNode::new(node_id)),
@@ -74,7 +76,7 @@ impl<'a> DensityTree {
         nodes
     }
 
-    /// Calculates the composite text density index.
+    /// Calculates composite text density index.
     pub fn composite_text_density(
         char_count: u32,
         tag_count: u32,
@@ -88,7 +90,7 @@ impl<'a> DensityTree {
             return 0.0;
         };
 
-        // labeled same was as in paper's formula
+        // labeled same as in paper's formula
         let ci = char_count as f32;
         let ti = normalize_denominator(tag_count);
         let nlci = normalize_denominator(char_count - link_char_count);
@@ -162,6 +164,8 @@ impl<'a> DensityTree {
             let mut te = density_node.append(child_density_node);
             Self::build_density_tree(child, &mut te, _depth + 1);
         }
+
+        // Here dive into the deepest recurstion depth
 
         match node.value() {
             scraper::Node::Text(text) => {
