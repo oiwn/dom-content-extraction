@@ -3,10 +3,12 @@ use crate::scraper::{Html, Selector};
 use ego_tree::{NodeId, NodeRef, Tree};
 use once_cell::sync::Lazy;
 
+/// Re-export scraper crate
 pub mod scraper {
     pub use scraper::*;
 }
 
+/// Selector for <body> tag
 static BODY_SELECTOR: Lazy<Selector> =
     Lazy::new(|| Selector::parse("body").unwrap());
 
@@ -37,7 +39,7 @@ pub struct DensityNode {
 }
 
 impl<'a> DensityTree {
-    /// Creates a new `DensityTree` with a single root node.
+    /// Create new `DensityTree` structure with a single root node.
     pub fn new(node_id: NodeId) -> Self {
         Self {
             tree: Tree::new(DensityNode::new(node_id)),
@@ -74,7 +76,7 @@ impl<'a> DensityTree {
         nodes
     }
 
-    /// Calculates the composite text density index.
+    /// Calculates composite text density index.
     pub fn composite_text_density(
         char_count: u32,
         tag_count: u32,
@@ -88,7 +90,7 @@ impl<'a> DensityTree {
             return 0.0;
         };
 
-        // labeled same was as in paper's formula
+        // labeled same as in paper's formula
         let ci = char_count as f32;
         let ti = normalize_denominator(tag_count);
         let nlci = normalize_denominator(char_count - link_char_count);
@@ -163,6 +165,8 @@ impl<'a> DensityTree {
             Self::build_density_tree(child, &mut te, _depth + 1);
         }
 
+        // Here dive into the deepest recurstion depth
+
         match node.value() {
             scraper::Node::Text(text) => {
                 let char_count = text.trim().len() as u32;
@@ -171,7 +175,11 @@ impl<'a> DensityTree {
             scraper::Node::Element(elem) => {
                 let tag_count = 1;
                 density_node.value().tag_count += tag_count;
-                if elem.name() == "a" {
+                // count buttons and selects as links as well
+                if elem.name() == "a"
+                    || elem.name() == "button"
+                    || elem.name() == "select "
+                {
                     let link_tag_count = 1;
                     density_node.value().link_tag_count += link_tag_count;
                 };
@@ -278,6 +286,31 @@ pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
         };
     }
     text.join(" ")
+}
+
+/// Helper function to extract all links (`href` attributes) from a `scraper::Html`
+/// document by collecting links from the node with the given `NodeId` and
+/// its descendants.
+///
+/// # Arguments
+///
+/// * `node_id` - The `NodeId` of the node whose descendant links should be extracted.
+/// * `document` - A reference to the `scraper::Html` document.
+///
+/// # Returns
+///
+/// * A `Vec<String>` containing the extracted links from the specified node and its descendants.
+pub fn get_node_links(node_id: NodeId, document: &Html) -> Vec<String> {
+    let mut links: Vec<String> = vec![];
+    let root_node = get_node_by_id(node_id, document);
+    for node in root_node.descendants() {
+        if let Some(elem) = node.value().as_element() {
+            if let Some(link) = elem.attr("href") {
+                links.push(link.trim().to_string());
+            };
+        };
+    }
+    links
 }
 
 #[cfg(test)]
@@ -391,7 +424,7 @@ mod tests {
     }
 
     #[test]
-    fn test_result_node_text() {
+    fn test_get_node_text() {
         let content = read_file("html/test_1.html").unwrap();
         let document = build_dom(content.as_str());
 
@@ -399,6 +432,17 @@ mod tests {
         let sorted_nodes = dtree.sorted_nodes();
         let node_id = sorted_nodes.last().unwrap().node_id;
         assert_eq!(get_node_text(node_id, &document).len(), 200);
+    }
+
+    #[test]
+    fn test_get_node_links() {
+        let content = read_file("html/test_1.html").unwrap();
+        let document = build_dom(content.as_str());
+
+        let dtree = DensityTree::from_document(&document);
+        let sorted_nodes = dtree.sorted_nodes();
+        let node_id = sorted_nodes.last().unwrap().node_id;
+        assert_eq!(get_node_links(node_id, &document).len(), 2);
     }
 
     #[test]
