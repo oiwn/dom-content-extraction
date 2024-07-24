@@ -1,6 +1,6 @@
 [package]
 name = "dom-content-extraction"
-version = "0.2.11"
+version = "0.2.12"
 
 description = "Rust implementation of Content extraction via text density paper"
 license = "MPL-2.0"
@@ -22,7 +22,6 @@ exclude = [
 
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [profile.release]
 opt-level = "z"
@@ -32,13 +31,13 @@ strip = true
 panic = "abort"
 
 [dependencies]
-ego-tree = "0.6.2"
-once_cell = "1.18.0"
-scraper = "0.17.1"
+ego-tree = "0.6"
+once_cell = "1.19"
+scraper = "0.19"
 
 [dev-dependencies]
-criterion = "0.4"
-zip = "0.6"
+criterion = "0.5"
+zip = "2.1"
 
 [[bench]]
 name = "simple"

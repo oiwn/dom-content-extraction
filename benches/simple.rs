@@ -1,5 +1,4 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use scraper::Html;
 use std::{fs, io::Read, path};
 use zip::read::ZipArchive;
 
@@ -12,8 +11,8 @@ pub fn read_file(
     Ok(content)
 }
 
-pub fn build_dom(html: &str) -> Html {
-    let document: Html = Html::parse_document(html);
+pub fn build_dom(html: &str) -> scraper::Html {
+    let document: scraper::Html = scraper::Html::parse_document(html);
     document
 }
 
