@@ -1,5 +1,15 @@
 # dom-content-extraction
 
+<div align="center">
+ <a href="https://github.com/oiwn/dom-content-extraction/actions/workflows/ci.yml">
+        <img src="https://img.shields.io/github/checks-status/oiwn/dom-content-extraction/main" alt="GitHub branch checks state">
+    </a>
+    |
+    <a href="https://crates.io/crates/dom-content-extraction">
+        <img src="https://img.shields.io/crates/dr/dom-content-extraction" alt="Crates.io">
+    </a>
+</div>
+
 Rust implementation of Fei Sun, Dandan Song and Lejian Liao paper:
 
 [Content Extraction via Text Density (CETD)](http://ofey.me/papers/cetd-sigir11.pdf)
