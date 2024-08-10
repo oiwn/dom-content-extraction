@@ -197,9 +197,13 @@ impl<'a> DensityTree {
                 / density_node.value().tag_count as f32;
         };
 
-        if node.parent().unwrap().value().as_element().unwrap().name() == "a" {
-            link_char_count += char_count;
-        };
+        if let Some(parent) = node.parent() {
+            if let Some(element) = parent.value().as_element() {
+                if element.name() == "a" {
+                    link_char_count += char_count;
+                }
+            }
+        }
 
         if let Some(mut parent) = density_node.parent() {
             parent.value().char_count += char_count;
