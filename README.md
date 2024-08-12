@@ -22,6 +22,18 @@ let sorted_nodes = dtree.sorted_nodes();
 let node_id = sorted_nodes.last().unwrap().node_id;
 
 println!("{}", get_node_text(node_id, &document));
+
+dtree.calculate_density_sum();
+let extracted_content = dtree.extract_content(&document);
+
+println!("{}", extracted_content;
+```
+## Run examples
+
+Check examples. NOTE: add real world dataset.
+
+```bash
+cargo run --example check -- lorem-ipsum 
 ```
 
 [Read documentation on docs.rs](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)

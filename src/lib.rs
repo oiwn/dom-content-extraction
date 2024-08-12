@@ -36,6 +36,8 @@ pub struct DensityNode {
     pub link_char_count: u32,
     pub link_tag_count: u32,
     pub density: f32,
+
+    pub density_sum: Option<f32>,
 }
 
 impl<'a> DensityTree {
@@ -212,6 +214,119 @@ impl<'a> DensityTree {
             parent.value().link_char_count += link_char_count;
         };
     }
+
+    /// Calculates the density sum for each node in the tree.
+    ///
+    /// This method iterates through all nodes in the tree and computes the sum of
+    /// the densities of each node's children. The result is stored in the `density_sum`
+    /// field of each node.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// let mut dtree = DensityTree::from_document(&document);
+    /// dtree.calculate_density_sum();
+    /// ```
+    pub fn calculate_density_sum(&mut self) {
+        for node in self.tree.clone().nodes() {
+            let sum = node.children().map(|child| child.value().density).sum();
+            let mut mut_node = self.tree.get_mut(node.id()).unwrap();
+            mut_node.value().density_sum = Some(sum);
+        }
+    }
+
+    /// Finds the node with the maximum density sum in the tree.
+    ///
+    /// This method compares the `density_sum` of all nodes and returns the node
+    /// with the highest value. If the tree is empty or all nodes have `None` as
+    /// their `density_sum`, it returns `None`.
+    ///
+    /// # Returns
+    ///
+    /// An `Option<NodeRef<DensityNode>>` representing the node with the highest
+    /// density sum, or `None` if no such node exists.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// let dtree = DensityTree::from_document(&document);
+    /// if let Some(max_node) = dtree.get_max_density_sum_node() {
+    ///     println!("Max density sum: {:?}", max_node.value().density_sum);
+    /// }
+    /// ```
+    pub fn get_max_density_sum_node(&self) -> Option<NodeRef<DensityNode>> {
+        self.tree.nodes().max_by(|a, b| {
+            a.value()
+                .density_sum
+                .partial_cmp(&b.value().density_sum)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
+    }
+
+    /// Extracts the main content from the HTML document.
+    ///
+    /// This method uses the density and density sum information to identify
+    /// and extract the main content from the HTML document. It follows these steps:
+    /// 1. Finds the node with the maximum density sum.
+    /// 2. Calculates a threshold based on the average density of the node's ancestors.
+    /// 3. Identifies the largest contiguous block of high-density content.
+    /// 4. Extracts and concatenates the text from the identified content nodes.
+    ///
+    /// # Arguments
+    ///
+    /// * `document` - A reference to the HTML document.
+    ///
+    /// # Returns
+    ///
+    /// A `String` containing the extracted main content of the document.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// let document = Html::parse_document(&html_string);
+    /// let mut dtree = DensityTree::from_document(&document);
+    /// dtree.calculate_density_sum();
+    /// let content = dtree.extract_content(&document);
+    /// println!("Extracted content: {}", content);
+    /// ```
+    pub fn extract_content(&self, document: &Html) -> String {
+        if let Some(max_node) = self.get_max_density_sum_node() {
+            // Calculate the average density of ancestors
+            let ancestor_densities: Vec<f32> =
+                max_node.ancestors().map(|n| n.value().density).collect();
+            let threshold = ancestor_densities.iter().sum::<f32>()
+                / ancestor_densities.len() as f32;
+
+            // Find the largest contiguous block of high-density content
+            let mut content_nodes: Vec<NodeRef<DensityNode>> = Vec::new();
+            let mut current_block: Vec<NodeRef<DensityNode>> = Vec::new();
+            for node in self.tree.nodes() {
+                if node.value().density >= threshold
+                    && node.value().density_sum.unwrap_or(0.0) > 0.0
+                {
+                    current_block.push(node);
+                } else if !current_block.is_empty() {
+                    if current_block.len() > content_nodes.len() {
+                        content_nodes = current_block;
+                    }
+                    current_block = Vec::new();
+                }
+            }
+            if current_block.len() > content_nodes.len() {
+                content_nodes = current_block;
+            }
+
+            // Extract text from the content nodes
+            let mut content = String::new();
+            for node in content_nodes {
+                content.push_str(&get_node_text(node.value().node_id, document));
+                content.push(' ');
+            }
+            content.trim().to_string()
+        } else {
+            String::new()
+        }
+    }
 }
 
 impl std::fmt::Debug for DensityTree {
@@ -245,6 +360,7 @@ impl DensityNode {
             link_char_count: 0,
             link_tag_count: 0,
             density: 0.0,
+            density_sum: None,
         }
     }
 }
@@ -408,7 +524,7 @@ mod tests {
         let document = build_dom(content.as_str());
 
         let dtree = DensityTree::from_document(&document);
-        assert_eq!(dtree.tree.values().count(), 52);
+        assert_eq!(dtree.tree.values().count(), 55);
     }
 
     #[test]
@@ -469,5 +585,98 @@ mod tests {
         let node_id = sorted_nodes.last().unwrap().node_id;
 
         assert_eq!(format!("{:?}", node_id), "NodeId(12)");
+    }
+
+    #[test]
+    fn test_calculate_density_sum() {
+        let content = read_file("html/test_1.html").unwrap();
+        let document = build_dom(content.as_str());
+        let mut dtree = DensityTree::from_document(&document);
+
+        // Before calculation, all density_sum values should be None
+        for node in dtree.tree.values() {
+            assert_eq!(node.density_sum, None);
+        }
+
+        dtree.calculate_density_sum();
+
+        // After calculation, all density_sum values should be Some
+        for node in dtree.tree.values() {
+            assert!(node.density_sum.is_some());
+        }
+
+        // Verify that leaf nodes have a density_sum of 0
+        for node in dtree.tree.nodes() {
+            if node.children().count() == 0 {
+                assert_eq!(node.value().density_sum, Some(0.0));
+            }
+        }
+
+        // Verify that a parent's density_sum is equal to the sum of its children's densities
+        for node in dtree.tree.nodes() {
+            if node.children().count() > 0 {
+                let expected_sum: f32 =
+                    node.children().map(|child| child.value().density).sum();
+                assert!(
+                    (node.value().density_sum.unwrap() - expected_sum).abs()
+                        < f32::EPSILON
+                );
+            }
+        }
+
+        // Find the maximum density_sum
+        let max_density_sum = dtree
+            .tree
+            .values()
+            .map(|node| node.density_sum.unwrap())
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .unwrap();
+
+        // Verify that no node has a density_sum greater than the maximum
+        for node in dtree.tree.values() {
+            assert!(node.density_sum.unwrap() <= max_density_sum);
+        }
+
+        // Verify that at least one node has the maximum density_sum
+        assert!(dtree
+            .tree
+            .values()
+            .any(|node| node.density_sum.unwrap() == max_density_sum));
+    }
+
+    #[test]
+    fn test_get_max_density_sum_node() {
+        let content = read_file("html/test_1.html").unwrap();
+        let document = build_dom(content.as_str());
+        let mut dtree = DensityTree::from_document(&document);
+
+        dtree.calculate_density_sum();
+        let max_node = dtree.get_max_density_sum_node().unwrap();
+
+        // Check if the max_node has the highest density_sum
+        let max_density_sum = max_node.value().density_sum.unwrap();
+        for node in dtree.tree.values() {
+            assert!(node.density_sum.unwrap() <= max_density_sum);
+        }
+    }
+
+    #[test]
+    fn test_extract_content() {
+        let content = read_file("html/test_1.html").unwrap();
+        let document = build_dom(content.as_str());
+        let mut dtree = DensityTree::from_document(&document);
+
+        dtree.calculate_density_sum();
+        let extracted_content = dtree.extract_content(&document);
+
+        // Check if the extracted content is not empty
+        assert!(!extracted_content.is_empty());
+
+        // Check if the extracted content contains expected text
+        assert!(extracted_content.contains("Here is text"));
+        assert!(extracted_content.contains("Here is article"));
+        assert!(extracted_content.contains("Even more huge"));
+
+        assert_eq!(extracted_content.contains("Menu"), false);
     }
 }

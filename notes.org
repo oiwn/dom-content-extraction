@@ -1,6 +1,14 @@
 #+title: Notes
 
 * Microtasks
+** TODO coverage should be 100%
+** TODO integrate trampoline or gcov into the github ci pipeline
+** TODO cargo publish workflow
+** TODO add clear copy-pastable example into readme.md
+** TODO usize instead of u32?
+** DONE need "examples" command for "lorem ipsum" test page
+** TODO need "benchmark"
+** TODO need to implement testing among real data set
 ** DONE move alorythm code to the density_tree.rs
 ** DONE implement from_document() method for DensityTree
 ** DONE debug pretty printer for DensityTree
@@ -22,18 +30,13 @@
 - [X] check
 ** DONE write some documentation
 ** DONE push it on crates.io
-** TODO coverage should be 100%
+** DONE make valid categories slugs for crates.io
 ** DONE add clippy to github ci pipeline
 ** DONE make clippy happy
 ** DONE when collecting text from node, skip empty trimmed strings
-** TODO integrate trampoline or gcov into the github ci pipeline
 ** DONE make it possible to use scraper dep from within (like in ndarray-rand)
 ** DONE update ci.yml in workflows
 ** DONE upgrade scraper version
-** TODO cargo publish workflow
 ** DONE Write documentation for each function
 ** DONE publish docs on docs.rs
-** TODO add clear copy-pastable example into readme.md
 ** DONE count select and button as links as well
-** DONE make valid categories slugs for crates.io
-** usize instead of u32?
