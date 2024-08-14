@@ -30,10 +30,23 @@ println!("{}", extracted_content;
 ```
 ## Run examples
 
-Check examples. NOTE: add real world dataset.
+Check examples.
+
+This one will extract content from generated "lorem ipsum" page
 
 ```bash
 cargo run --example check -- lorem-ipsum 
+```
+
+There is scoring example i'm trying to implement scoring.
+You will need to download GoldenStandard and finalrun-input datasets from:
+
+[https://sigwac.org.uk/cleaneval/](https://sigwac.org.uk/cleaneval/)
+
+and unpack archives into `data/` directory.
+
+```bash
+cargo run --example ce_score
 ```
 
 [Read documentation on docs.rs](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)

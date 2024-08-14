@@ -6,4 +6,5 @@
 /examples/**/target
 
 /tmp
+/data
 *.profraw
