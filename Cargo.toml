@@ -1,6 +1,6 @@
 [package]
 name = "dom-content-extraction"
-version = "0.3.1"
+version = "0.3.2"
 
 description = "Rust implementation of Content extraction via text density paper"
 license = "MPL-2.0"
@@ -22,7 +22,6 @@ exclude = [
 
 edition = "2021"
 
-
 [profile.release]
 opt-level = "z"
 lto = true
@@ -38,7 +37,10 @@ scraper = "0.20"
 [dev-dependencies]
 criterion = "0.5"
 zip = "2.1"
-clap = { version = "4.5.0", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
+anyhow = "1.0.86"
+regex = "1.10.6"
+rayon = "1.10.0"
 
 [[bench]]
 name = "simple"

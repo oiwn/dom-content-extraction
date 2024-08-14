@@ -30,10 +30,49 @@ println!("{}", extracted_content;
 ```
 ## Run examples
 
-Check examples. NOTE: add real world dataset.
+Check examples.
+
+This one will extract content from generated "lorem ipsum" page
 
 ```bash
 cargo run --example check -- lorem-ipsum 
 ```
 
+There is scoring example i'm trying to implement scoring.
+You will need to download GoldenStandard and finalrun-input datasets from:
+
+[https://sigwac.org.uk/cleaneval/](https://sigwac.org.uk/cleaneval/)
+
+and unpack archives into `data/` directory.
+
+```bash
+cargo run --example ce_score
+```
+
+As far as i see there is problem opening some files:
+
+```bash
+Error processing file 730: Failed to read file: "data/finalrun-input/730.html"
+
+Caused by:
+    stream did not contain valid UTF-8
+```
+
+But overall extraction works pretty well:
+
+```text
+Overall Performance:
+  Files processed: 370
+  Average Precision: 0.87
+  Average Recall: 0.82
+  Average F1 Score: 0.75  
+```
+
 [Read documentation on docs.rs](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)
+
+
+### Desired features
+
+- [ ] implement normal scoring
+- [ ] create real world dataset
+- [ ] improve algo
