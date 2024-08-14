@@ -49,4 +49,19 @@ and unpack archives into `data/` directory.
 cargo run --example ce_score
 ```
 
+As far as i see there is problem opening some files:
+
+```bash
+Error processing file 730: Failed to read file: "data/finalrun-input/730.html"
+
+Caused by:
+    stream did not contain valid UTF-8
+```
+
 [Read documentation on docs.rs](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)
+
+
+### Desired features
+
+- [ ] implement normal scoring
+- [ ] improve algo
