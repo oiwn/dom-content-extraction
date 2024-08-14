@@ -1,11 +1,7 @@
 # dom-content-extraction
 
 <div align="center">
- <a href="https://github.com/oiwn/dom-content-extraction/actions/workflows/ci.yml">
-        <img src="https://img.shields.io/github/checks-status/oiwn/dom-content-extraction/main" alt="GitHub branch checks state">
-    </a>
-    |
-    <a href="https://crates.io/crates/dom-content-extraction">
+   <a href="https://crates.io/crates/dom-content-extraction">
         <img src="https://img.shields.io/crates/dr/dom-content-extraction" alt="Crates.io">
     </a>
 </div>
@@ -28,6 +24,19 @@ let extracted_content = dtree.extract_content(&document);
 
 println!("{}", extracted_content;
 ```
+
+Add it it with:
+
+```bash
+cargo add dom-content-extraction
+```
+
+or add to you  `Cargo.toml`
+
+```
+dom-content-extraction = "0.3"
+```
+
 ## Run examples
 
 Check examples.
