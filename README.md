@@ -58,10 +58,21 @@ Caused by:
     stream did not contain valid UTF-8
 ```
 
+But overall extraction works pretty well:
+
+```text
+Overall Performance:
+  Files processed: 370
+  Average Precision: 0.87
+  Average Recall: 0.82
+  Average F1 Score: 0.75  
+```
+
 [Read documentation on docs.rs](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)
 
 
 ### Desired features
 
 - [ ] implement normal scoring
+- [ ] create real world dataset
 - [ ] improve algo
