@@ -84,4 +84,3 @@ Overall Performance:
 
 - [ ] implement normal scoring
 - [ ] create real world dataset
-- [ ] improve algo
