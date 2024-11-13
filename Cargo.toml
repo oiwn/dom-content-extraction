@@ -1,6 +1,6 @@
 [package]
 name = "dom-content-extraction"
-version = "0.3.2"
+version = "0.3.3"
 
 description = "Rust implementation of Content extraction via text density paper"
 license = "MPL-2.0"
@@ -12,7 +12,7 @@ keywords = ["dom-text-density"]
 categories = ["data-structures", "web-programming", "text-processing"]
 exclude = [
     "tmp/*",
-    # "benches/*",
+    "benches/*",
     "html/*",
     ".github/*",
     ".gitignore",
@@ -30,17 +30,16 @@ strip = true
 panic = "abort"
 
 [dependencies]
-ego-tree = "0.6"
-once_cell = "1.19"
-scraper = "0.20"
+ego-tree = "0.9"
+scraper = "0.21"
 
 [dev-dependencies]
 criterion = "0.5"
-zip = "2.1"
+zip = "2.2"
 clap = { version = "4.5", features = ["derive"] }
-anyhow = "1.0.86"
-regex = "1.10.6"
-rayon = "1.10.0"
+anyhow = "1"
+regex = "1"
+rayon = "1"
 
 [[bench]]
 name = "simple"
