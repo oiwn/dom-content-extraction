@@ -1,7 +1,6 @@
 #![crate_name = "dom_content_extraction"]
 use crate::scraper::{Html, Selector};
 use ego_tree::{NodeId, NodeRef, Tree};
-// use once_cell::sync::Lazy;
 use std::sync::LazyLock;
 
 /// Re-export scraper crate
@@ -10,8 +9,6 @@ pub mod scraper {
 }
 
 /// Selector for <body> tag
-// static BODY_SELECTOR: Lazy<Selector> =
-//     Lazy::new(|| Selector::parse("body").unwrap());
 static BODY_SELECTOR: LazyLock<Selector> =
     LazyLock::new(|| Selector::parse("body").unwrap());
 
@@ -336,46 +333,6 @@ impl<'a> DensityTree {
                     content.push(' ');
                     seen_text.insert(node_text);
                 }
-            }
-            content.trim().to_string()
-        } else {
-            String::new()
-        }
-    }
-
-    /// This causing duplications sometimes
-    pub fn extract_content_prev(&self, document: &Html) -> String {
-        if let Some(max_node) = self.get_max_density_sum_node() {
-            // Calculate the average density of ancestors
-            let ancestor_densities: Vec<f32> =
-                max_node.ancestors().map(|n| n.value().density).collect();
-            let threshold = ancestor_densities.iter().sum::<f32>()
-                / ancestor_densities.len() as f32;
-
-            // Find the largest contiguous block of high-density content
-            let mut content_nodes: Vec<NodeRef<DensityNode>> = Vec::new();
-            let mut current_block: Vec<NodeRef<DensityNode>> = Vec::new();
-            for node in self.tree.nodes() {
-                if node.value().density >= threshold
-                    && node.value().density_sum.unwrap_or(0.0) > 0.0
-                {
-                    current_block.push(node);
-                } else if !current_block.is_empty() {
-                    if current_block.len() > content_nodes.len() {
-                        content_nodes = current_block;
-                    }
-                    current_block = Vec::new();
-                }
-            }
-            if current_block.len() > content_nodes.len() {
-                content_nodes = current_block;
-            }
-
-            // Extract text from the content nodes
-            let mut content = String::new();
-            for node in content_nodes {
-                content.push_str(&get_node_text(node.value().node_id, document));
-                content.push(' ');
             }
             content.trim().to_string()
         } else {
