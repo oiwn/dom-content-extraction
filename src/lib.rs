@@ -1,7 +1,8 @@
 #![crate_name = "dom_content_extraction"]
 use crate::scraper::{Html, Selector};
 use ego_tree::{NodeId, NodeRef, Tree};
-use once_cell::sync::Lazy;
+// use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 /// Re-export scraper crate
 pub mod scraper {
@@ -9,8 +10,10 @@ pub mod scraper {
 }
 
 /// Selector for <body> tag
-static BODY_SELECTOR: Lazy<Selector> =
-    Lazy::new(|| Selector::parse("body").unwrap());
+// static BODY_SELECTOR: Lazy<Selector> =
+//     Lazy::new(|| Selector::parse("body").unwrap());
+static BODY_SELECTOR: LazyLock<Selector> =
+    LazyLock::new(|| Selector::parse("body").unwrap());
 
 /// Prevent division by zero and convert integers into f32
 #[inline]
