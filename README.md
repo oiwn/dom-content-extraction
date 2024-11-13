@@ -4,26 +4,60 @@
    <a href="https://crates.io/crates/dom-content-extraction">
         <img src="https://img.shields.io/crates/dr/dom-content-extraction" alt="Crates.io">
     </a>
+  <a href="https://codecov.io/github/oiwn/dom-content-extraction" > 
+   <img src="https://codecov.io/github/oiwn/dom-content-extraction/graph/badge.svg?token=6Y7IYX29OP"/> 
+   </a>
 </div>
 
-Rust implementation of Fei Sun, Dandan Song and Lejian Liao paper:
 
-[Content Extraction via Text Density (CETD)](http://ofey.me/papers/cetd-sigir11.pdf)
+A Rust library for extracting main content from web pages using text 
+density analysis. This is an implementation of the Content Extraction 
+via Text Density (CETD) algorithm described in the paper by Fei Sun, 
+Dandan Song and Lejian Liao: 
+
+[Content Extraction via Text Density](http://ofey.me/papers/cetd-sigir11.pdf).
+
+## What Problem Does This Solve?
+
+Web pages often contain a lot of peripheral content like navigation menus, advertisements, footers, and sidebars. This makes it challenging to extract just the main content programmatically. This library helps solve this problem by:
+
+- Analyzing the text density patterns in HTML documents
+- Identifying content-rich sections versus navigational/peripheral elements
+- Extracting the main content while filtering out noise
+- Handling various HTML layouts and structures
+
+## Key Features
+
+- Build a density tree representing text distribution in the HTML document
+- Calculate composite text density using multiple metrics
+- Extract main content blocks based on density patterns
+- Support for nested HTML structures
+- Efficient processing of large documents
+- Error handling for malformed HTML
+
+## Usage
+
+Basic usage example:
 
 ```rust
 use dom_content_extraction::{DensityTree, get_node_text};
 
-let dtree = DensityTree::from_document(&document); // &scraper::Html 
+let dtree = DensityTree::from_document(&document)?; // Takes a scraper::Html document
+
+// Get nodes sorted by text density
 let sorted_nodes = dtree.sorted_nodes();
-let node_id = sorted_nodes.last().unwrap().node_id;
+let densest_node = sorted_nodes.last().unwrap();
 
-println!("{}", get_node_text(node_id, &document));
+// Extract text from the node with highest density
+println!("{}", get_node_text(densest_node.node_id, &document)?);
 
-dtree.calculate_density_sum();
-let extracted_content = dtree.extract_content(&document);
-
-println!("{}", extracted_content;
+// For more accurate content extraction:
+dtree.calculate_density_sum()?;
+let main_content = dtree.extract_content(&document)?;
+println!("{}", main_content);
 ```
+
+## Installation 
 
 Add it it with:
 
@@ -36,6 +70,12 @@ or add to you  `Cargo.toml`
 ```
 dom-content-extraction = "0.3"
 ```
+
+## Documentation
+
+Read the docs! 
+
+[dom-content-extraction documentation](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)
 
 ## Run examples
 

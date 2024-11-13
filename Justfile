@@ -1,0 +1,2 @@
+coverage:
+    cargo tarpaulin
