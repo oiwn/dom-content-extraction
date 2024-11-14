@@ -29,8 +29,8 @@ fn process_lorem_ipsum() {
     let html_content =
         fs::read_to_string("html/lorem_ipsum.html").expect("Unable to read file");
     let document = Html::parse_document(&html_content);
-    let mut dtree = DensityTree::from_document(&document);
-    dtree.calculate_density_sum();
-    let extracted_content = dtree.extract_content(&document);
+    let mut dtree = DensityTree::from_document(&document).unwrap();
+    let _ = dtree.calculate_density_sum();
+    let extracted_content = dtree.extract_content(&document).unwrap();
     println!("Extracted content:\n{}", extracted_content);
 }

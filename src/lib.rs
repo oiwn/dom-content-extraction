@@ -1,4 +1,120 @@
+//! # dom-content-extraction
+//!
+//! A library for extracting main content from HTML documents using text density analysis.
+//! This crate implements the Content Extraction via Text Density (CETD) algorithm described
+//! in the paper by Fei Sun, Dandan Song and Lejian Liao.
+//!
+//! ## Overview
+//!
+//! Web pages typically contain various elements beyond the main content, such as navigation
+//! menus, advertisements, sidebars, and footers. This library helps identify and extract
+//! the main content by analyzing text density patterns within the HTML document structure.
+//!
+//! The core concept is that content-rich sections of a webpage tend to have different text
+//! density characteristics compared to navigational or peripheral elements. By building a
+//! density tree and applying composite text density calculations, we can identify and
+//! extract the main content regions.
+//!
+//! ## Main Components
+//!
+//! - [`DensityTree`]: The primary structure representing text density analysis of an HTML document
+//! - [`DensityNode`]: Individual nodes in the density tree containing text metrics
+//! - Helper functions for node text extraction and link analysis
+//!
+//! ## Basic Usage
+//!
+//! ```no_run
+//! use dom_content_extraction::{DensityTree, scraper::Html};
+//!
+//! // Parse your HTML document
+//! let html_content = "<html><body><article>Main content</article></body></html>";
+//! let document = Html::parse_document(html_content);
+//!
+//! // Create and analyze density tree
+//! let mut dtree = DensityTree::from_document(&document)?;
+//!
+//! // Calculate density sums for better content identification
+//! dtree.calculate_density_sum()?;
+//!
+//! // Extract the main content
+//! let content = dtree.extract_content(&document)?;
+//! println!("{}", content);
+//! # Ok::<(), dom_content_extraction::DomExtractionError>(())
+//! ```
+//!
+//! ## Advanced Usage
+//!
+//! For more precise control, you can work directly with the density-sorted nodes:
+//!
+//! ```no_run
+//! use dom_content_extraction::{DensityTree, get_node_text, scraper::Html};
+//!
+//! let document = Html::parse_document("<html>...</html>");
+//! let dtree = DensityTree::from_document(&document)?;
+//!
+//! // Get nodes sorted by density
+//! let sorted_nodes = dtree.sorted_nodes();
+//!
+//! // Process the densest nodes
+//! for node in sorted_nodes.iter().rev().take(3) {
+//!     println!("Node density: {}", node.density);
+//!     let text = get_node_text(node.node_id, &document)?;
+//!     println!("Node content: {}", text);
+//! }
+//! # Ok::<(), dom_content_extraction::DomExtractionError>(())
+//! ```
+//!
+//! ## Algorithm Details
+//!
+//! The content extraction process involves several steps:
+//!
+//! 1. Building a density tree that mirrors the HTML document structure
+//! 2. Calculating text density metrics for each node:
+//!    - Character count
+//!    - Tag count
+//!    - Link character count
+//!    - Link tag count
+//! 3. Computing composite text density using a formula that considers:
+//!    - Text to tag ratio
+//!    - Link density
+//!    - Content distribution
+//! 4. Identifying high-density regions that likely contain main content
+//!
+//! ## Error Handling
+//!
+//! The library uses custom error types to handle various failure cases:
+//!
+//! - [`DomExtractionError::NoBodyElement`]: When the HTML document lacks a body tag
+//! - [`DomExtractionError::NodeAccessError`]: When a node cannot be accessed in the tree
+//!
+//! ## Performance Considerations
+//!
+//! - The library performs a full traversal of the HTML document to build the density tree
+//! - Memory usage scales with document size and complexity
+//! - Text density calculations are performed once and cached
+//! - Node sorting operations are O(n log n) where n is the number of content nodes
+//!
+//! ## Feature Flags
+//!
+//! Currently, no optional features are provided. All functionality is included in the default build.
+//!
+//! ## Examples
+//!
+//! More examples can be found in the `examples/` directory of the source repository:
+//!
+//! - `check.rs`: Basic content extraction from test documents
+//! - `ce_score.rs`: Evaluation tool for measuring extraction accuracy
+//!
+//! ## References
+//!
+//! 1. Sun, F., Song, D., & Liao, L. (2011). "DOM Based Content Extraction via Text Density"
+//! 2. CleanEval dataset: <https://sigwac.org.uk/cleaneval/>
+//!
+//! [`DensityTree`]: struct.DensityTree.html
+//! [`DensityNode`]: struct.DensityNode.html
+//! [`DomExtractionError`]: enum.DomExtractionError.html
 #![crate_name = "dom_content_extraction"]
+#![deny(clippy::unwrap_used)]
 use crate::scraper::{Html, Selector};
 use ego_tree::{NodeId, NodeRef, Tree};
 use std::sync::LazyLock;
@@ -8,7 +124,16 @@ pub mod scraper {
     pub use scraper::*;
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum DomExtractionError {
+    #[error("Failed to find body element")]
+    NoBodyElement,
+    #[error("Failed to access tree node: {0:?}")]
+    NodeAccessError(NodeId),
+}
+
 /// Selector for <body> tag
+#[allow(clippy::unwrap_used)]
 static BODY_SELECTOR: LazyLock<Selector> =
     LazyLock::new(|| Selector::parse("body").unwrap());
 
@@ -29,6 +154,7 @@ pub struct DensityTree {
 /// A node in a `DensityTree` containing text density information.
 #[derive(Debug, Clone)]
 pub struct DensityNode {
+    // node id in DOM provided by `scraper` crate
     pub node_id: NodeId,
 
     pub char_count: u32,
@@ -49,17 +175,23 @@ impl<'a> DensityTree {
     }
 
     /// Creates and calculates a `DensityTree` from a `scraper::Html` DOM tree.
-    pub fn from_document(document: &Html) -> Self {
+    pub fn from_document(document: &Html) -> Result<Self, DomExtractionError> {
         // NOTE: process possible errors (when page is completely broken)
-        let body = &document.select(&BODY_SELECTOR).next().unwrap().to_owned();
+        let body = &document
+            .select(&BODY_SELECTOR)
+            .next()
+            .ok_or(DomExtractionError::NoBodyElement)?;
         // NOTE: there is usable value in document, such as error field
         let body_node_id = body.id();
-        let body_node = body.tree().get(body_node_id).unwrap();
+        let body_node = body
+            .tree()
+            .get(body_node_id)
+            .ok_or(DomExtractionError::NodeAccessError(body_node_id))?;
 
         let mut density_tree = Self::new(body_node_id);
         Self::build_density_tree(body_node, &mut density_tree.tree.root_mut(), 1);
         density_tree.calculate_density_tree();
-        density_tree
+        Ok(density_tree)
     }
 
     /// Returns a vector of nodes sorted by density in ascending order.
@@ -234,12 +366,16 @@ impl<'a> DensityTree {
     /// let mut dtree = DensityTree::from_document(&document);
     /// dtree.calculate_density_sum();
     /// ```
-    pub fn calculate_density_sum(&mut self) {
+    pub fn calculate_density_sum(&mut self) -> Result<(), DomExtractionError> {
         for node in self.tree.clone().nodes() {
             let sum = node.children().map(|child| child.value().density).sum();
-            let mut mut_node = self.tree.get_mut(node.id()).unwrap();
+            let mut mut_node = self
+                .tree
+                .get_mut(node.id())
+                .ok_or(DomExtractionError::NodeAccessError(node.id()))?;
             mut_node.value().density_sum = Some(sum);
         }
+        Ok(())
     }
 
     /// Finds the node with the maximum density sum in the tree.
@@ -296,7 +432,10 @@ impl<'a> DensityTree {
     /// let content = dtree.extract_content(&document);
     /// println!("Extracted content: {}", content);
     /// ```
-    pub fn extract_content(&self, document: &Html) -> String {
+    pub fn extract_content(
+        &self,
+        document: &Html,
+    ) -> Result<String, DomExtractionError> {
         if let Some(max_node) = self.get_max_density_sum_node() {
             // Calculate the average density of ancestors
             let ancestor_densities: Vec<f32> =
@@ -327,16 +466,16 @@ impl<'a> DensityTree {
             let mut content = String::new();
             let mut seen_text = std::collections::HashSet::new();
             for node in content_nodes {
-                let node_text = get_node_text(node.value().node_id, document);
+                let node_text = get_node_text(node.value().node_id, document)?;
                 if !seen_text.contains(&node_text) {
                     content.push_str(&node_text);
                     content.push(' ');
                     seen_text.insert(node_text);
                 }
             }
-            content.trim().to_string()
+            Ok(content.trim().to_string())
         } else {
-            String::new()
+            Ok(String::new())
         }
     }
 }
@@ -387,12 +526,16 @@ impl DensityNode {
 /// # Returns
 ///
 /// * An `ego_tree::NodeRef` representing the node with the specified `NodeId`.
+///   or `DomExtractionError::NodeAccessError`
 #[inline]
 pub fn get_node_by_id(
     node_id: NodeId,
     document: &Html,
-) -> ego_tree::NodeRef<'_, scraper::node::Node> {
-    document.tree.get(node_id).unwrap()
+) -> Result<ego_tree::NodeRef<'_, scraper::node::Node>, DomExtractionError> {
+    document
+        .tree
+        .get(node_id)
+        .ok_or(DomExtractionError::NodeAccessError(node_id))
 }
 
 /// Helper function to extract all text from a `scraper::Html` document
@@ -406,9 +549,12 @@ pub fn get_node_by_id(
 /// # Returns
 ///
 /// * A `String` containing the concatenated text from all descendant nodes of the specified node.
-pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
+pub fn get_node_text(
+    node_id: NodeId,
+    document: &Html,
+) -> Result<String, DomExtractionError> {
     let mut text: Vec<String> = vec![];
-    let root_node = get_node_by_id(node_id, document);
+    let root_node = get_node_by_id(node_id, document)?;
     for node in root_node.descendants() {
         if let Some(txt) = node.value().as_text() {
             let clean_text = txt.trim();
@@ -417,7 +563,7 @@ pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
             };
         };
     }
-    text.join(" ")
+    Ok(text.join(" "))
 }
 
 /// Helper function to extract all links (`href` attributes) from a `scraper::Html`
@@ -432,9 +578,12 @@ pub fn get_node_text(node_id: NodeId, document: &Html) -> String {
 /// # Returns
 ///
 /// * A `Vec<String>` containing the extracted links from the specified node and its descendants.
-pub fn get_node_links(node_id: NodeId, document: &Html) -> Vec<String> {
+pub fn get_node_links(
+    node_id: NodeId,
+    document: &Html,
+) -> Result<Vec<String>, DomExtractionError> {
     let mut links: Vec<String> = vec![];
-    let root_node = get_node_by_id(node_id, document);
+    let root_node = get_node_by_id(node_id, document)?;
     for node in root_node.descendants() {
         if let Some(elem) = node.value().as_element() {
             if let Some(link) = elem.attr("href") {
@@ -442,10 +591,11 @@ pub fn get_node_links(node_id: NodeId, document: &Html) -> Vec<String> {
             };
         };
     }
-    links
+    Ok(links)
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use std::{fs, io, path};
@@ -476,14 +626,14 @@ mod tests {
     #[test]
     fn test_load_file() {
         let content = read_file("html/test_1.html");
-        assert_eq!(content.is_ok(), true);
-        assert_eq!(content.unwrap().len() > 0, true);
+        assert!(content.is_ok());
+        assert!(!content.unwrap().is_empty());
     }
 
     #[test]
     fn test_build_dom() {
         let document = load_content("test_2.html");
-        assert_eq!(document.errors.len() == 1, true);
+        assert!(document.errors.len() == 1);
     }
 
     #[test]
@@ -535,7 +685,7 @@ mod tests {
         let content = read_file("html/test_1.html").unwrap();
         let document = build_dom(content.as_str());
 
-        let dtree = DensityTree::from_document(&document);
+        let dtree = DensityTree::from_document(&document).unwrap();
         assert_eq!(dtree.tree.values().count(), 55);
     }
 
@@ -543,12 +693,12 @@ mod tests {
     fn test_sorted_density_results() {
         let document = load_content("test_1.html");
 
-        let dtree = DensityTree::from_document(&document);
+        let dtree = DensityTree::from_document(&document).unwrap();
         let sorted_nodes = dtree.sorted_nodes();
         let node_id = sorted_nodes.last().unwrap().node_id;
         assert_eq!(format!("{:?}", node_id), "NodeId(22)");
 
-        let node = get_node_by_id(node_id, &document);
+        let node = get_node_by_id(node_id, &document).unwrap();
 
         let node_attr = node.value().as_element().unwrap().attrs().last().unwrap();
         assert_eq!(node_attr.0, "class");
@@ -560,10 +710,10 @@ mod tests {
         let content = read_file("html/test_1.html").unwrap();
         let document = build_dom(content.as_str());
 
-        let dtree = DensityTree::from_document(&document);
+        let dtree = DensityTree::from_document(&document).unwrap();
         let sorted_nodes = dtree.sorted_nodes();
         let node_id = sorted_nodes.last().unwrap().node_id;
-        assert_eq!(get_node_text(node_id, &document).len(), 200);
+        assert_eq!(get_node_text(node_id, &document).unwrap().len(), 200);
     }
 
     #[test]
@@ -571,10 +721,10 @@ mod tests {
         let content = read_file("html/test_1.html").unwrap();
         let document = build_dom(content.as_str());
 
-        let dtree = DensityTree::from_document(&document);
+        let dtree = DensityTree::from_document(&document).unwrap();
         let sorted_nodes = dtree.sorted_nodes();
         let node_id = sorted_nodes.last().unwrap().node_id;
-        assert_eq!(get_node_links(node_id, &document).len(), 2);
+        assert_eq!(get_node_links(node_id, &document).unwrap().len(), 2);
     }
 
     #[test]
@@ -582,7 +732,7 @@ mod tests {
         let content = read_file("html/test_2.html").unwrap();
         let document = build_dom(content.as_str());
 
-        let dtree = DensityTree::from_document(&document);
+        let dtree = DensityTree::from_document(&document).unwrap();
 
         assert_eq!(format!("{:?}", dtree).lines().count(), 18);
     }
@@ -592,7 +742,7 @@ mod tests {
         let content = read_file("html/test_4.html").unwrap();
         let document = build_dom(content.as_str());
 
-        let dtree = DensityTree::from_document(&document);
+        let dtree = DensityTree::from_document(&document).unwrap();
         let sorted_nodes = dtree.sorted_nodes();
         let node_id = sorted_nodes.last().unwrap().node_id;
 
@@ -603,14 +753,14 @@ mod tests {
     fn test_calculate_density_sum() {
         let content = read_file("html/test_1.html").unwrap();
         let document = build_dom(content.as_str());
-        let mut dtree = DensityTree::from_document(&document);
+        let mut dtree = DensityTree::from_document(&document).unwrap();
 
         // Before calculation, all density_sum values should be None
         for node in dtree.tree.values() {
             assert_eq!(node.density_sum, None);
         }
 
-        dtree.calculate_density_sum();
+        dtree.calculate_density_sum().unwrap();
 
         // After calculation, all density_sum values should be Some
         for node in dtree.tree.values() {
@@ -660,9 +810,9 @@ mod tests {
     fn test_get_max_density_sum_node() {
         let content = read_file("html/test_1.html").unwrap();
         let document = build_dom(content.as_str());
-        let mut dtree = DensityTree::from_document(&document);
+        let mut dtree = DensityTree::from_document(&document).unwrap();
 
-        dtree.calculate_density_sum();
+        dtree.calculate_density_sum().unwrap();
         let max_node = dtree.get_max_density_sum_node().unwrap();
 
         // Check if the max_node has the highest density_sum
@@ -676,10 +826,12 @@ mod tests {
     fn test_extract_content() {
         let content = read_file("html/test_1.html").unwrap();
         let document = build_dom(content.as_str());
-        let mut dtree = DensityTree::from_document(&document);
+        let mut dtree = DensityTree::from_document(&document).unwrap();
 
-        dtree.calculate_density_sum();
-        let extracted_content = dtree.extract_content(&document);
+        dtree
+            .calculate_density_sum()
+            .expect("Error while calculating Density Sum");
+        let extracted_content = dtree.extract_content(&document).unwrap();
 
         // Check if the extracted content is not empty
         assert!(!extracted_content.is_empty());
@@ -689,6 +841,6 @@ mod tests {
         assert!(extracted_content.contains("Here is article"));
         assert!(extracted_content.contains("Even more huge"));
 
-        assert_eq!(extracted_content.contains("Menu"), false);
+        assert!(!extracted_content.contains("Menu"));
     }
 }

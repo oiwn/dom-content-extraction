@@ -1,6 +1,6 @@
 [package]
 name = "dom-content-extraction"
-version = "0.3.3"
+version = "0.3.4"
 
 description = "Rust implementation of Content extraction via text density paper"
 license = "MPL-2.0"
@@ -32,6 +32,7 @@ panic = "abort"
 [dependencies]
 ego-tree = "0.9"
 scraper = "0.21"
+thiserror = "2.0.3"
 
 [dev-dependencies]
 criterion = "0.5"

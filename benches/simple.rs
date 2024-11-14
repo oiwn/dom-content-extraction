@@ -37,10 +37,10 @@ fn benchmark_test_1_html_dom_content_extaction(c: &mut Criterion) {
         b.iter(|| {
             let document = build_dom(black_box(content.as_str()));
 
-            let dtree = DensityTree::from_document(&document);
+            let dtree = DensityTree::from_document(&document).unwrap();
             let sorted_nodes = dtree.sorted_nodes();
             let node_id = sorted_nodes.last().unwrap().node_id;
-            assert_eq!(get_node_text(node_id, &document).len(), 200);
+            assert_eq!(get_node_text(node_id, &document).unwrap().len(), 200);
         })
     });
 }
@@ -56,10 +56,10 @@ fn benchmark_real_file_dom_content_extraction(c: &mut Criterion) {
         b.iter(|| {
             let document = build_dom(black_box(content.as_str()));
 
-            let dtree = DensityTree::from_document(&document);
+            let dtree = DensityTree::from_document(&document).unwrap();
             let sorted_nodes = dtree.sorted_nodes();
             let node_id = sorted_nodes.last().unwrap().node_id;
-            assert_eq!(get_node_text(node_id, &document).len() > 0, true);
+            assert!(!get_node_text(node_id, &document).unwrap().is_empty());
         })
     });
 }
@@ -74,7 +74,7 @@ fn benchmark_real_file_density_tree_calculation(c: &mut Criterion) {
 
     c.bench_function("real_file_density_tree_calculation", |b| {
         b.iter(|| {
-            let dtree = DensityTree::from_document(black_box(&document));
+            let dtree = DensityTree::from_document(black_box(&document)).unwrap();
             assert_eq!(dtree.tree.values().len(), 893);
         })
     });
@@ -90,7 +90,7 @@ fn benchmark_real_file_density_tree_calculation_and_sort(c: &mut Criterion) {
 
     c.bench_function("real_file_density_tree_sort_nodes", |b| {
         b.iter(|| {
-            let dtree = DensityTree::from_document(black_box(&document));
+            let dtree = DensityTree::from_document(black_box(&document)).unwrap();
             let sorted_nodes = dtree.sorted_nodes();
             let last_node = sorted_nodes.last().unwrap();
             assert_eq!(last_node.density, 104.79147);
@@ -106,14 +106,15 @@ fn benchmark_node_text_extraction(c: &mut Criterion) {
     .unwrap();
     let document = build_dom(content.as_str());
 
-    let dtree = DensityTree::from_document(&document);
+    let dtree = DensityTree::from_document(&document).unwrap();
     let sorted_nodes = dtree.sorted_nodes();
     let last_node_id = sorted_nodes.last().unwrap().node_id;
 
     c.bench_function("real_file_density_tree_sort_and_text_extraction", |b| {
         b.iter(|| {
             let node_text =
-                get_node_text(black_box(last_node_id), black_box(&document));
+                get_node_text(black_box(last_node_id), black_box(&document))
+                    .unwrap();
             assert_eq!(node_text.len(), 3065);
         })
     });

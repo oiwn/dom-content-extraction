@@ -30,9 +30,9 @@ fn extract_content_from_html(file_path: &Path) -> Result<String> {
         .with_context(|| format!("Failed to read file: {:?}", file_path))?;
 
     let document = Html::parse_document(&content);
-    let mut dtree = DensityTree::from_document(&document);
-    dtree.calculate_density_sum();
-    let extracted_content = dtree.extract_content(&document);
+    let mut dtree = DensityTree::from_document(&document).unwrap();
+    let _ = dtree.calculate_density_sum();
+    let extracted_content = dtree.extract_content(&document).unwrap();
 
     Ok(normalize_text(&extracted_content))
 }
