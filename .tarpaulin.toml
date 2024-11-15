@@ -1,0 +1,14 @@
+[coverage]
+# Exclude benches directory
+exclude-files = [
+    "benches/*",
+    "examples/*"
+]
+
+[report]
+# Output options
+out = ["Xml", "Html", "Json"]
+output-dir = "target/tarpaulin"
+
+# Report configuration
+fail-under = 80 # Fail if coverage is under 80%
