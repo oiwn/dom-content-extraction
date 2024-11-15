@@ -52,7 +52,7 @@ fn process_test_4_html() {
 
     // Extract text from the node with highest density
     println!(
-        "{}",
+        "Highest density node:\n{}",
         get_node_text(densest_node.node_id, &document).unwrap()
     );
 }

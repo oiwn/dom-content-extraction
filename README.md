@@ -80,6 +80,12 @@ This one will extract content from generated "lorem ipsum" page
 cargo run --example check -- lorem-ipsum 
 ```
 
+This one print node with highest density:
+
+```bash
+cargo run --examples check -- test4
+```
+
 There is scoring example i'm trying to implement scoring.
 You will need to download GoldenStandard and finalrun-input datasets from:
 
