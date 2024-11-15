@@ -29,17 +29,26 @@ jobs:
       - name: Generate coverage report
         run: |
           # Clean any previous reports
-          rm -f tarpaulin-report.html
-          rm -f coverage.xml
+          rm -f coverage/*.{html,xml}
+          mkdir -p coverage
           
-          # Run tarpaulin with coverage threshold
+          # Run tarpaulin
           cargo tarpaulin --verbose \
             --workspace \
             --timeout 120 \
             --out xml \
             --out html \
-            --output-dir coverage \
-            --minimum-coverage $MIN_COVERAGE
+            --output-dir coverage
+            
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(grep -oP 'line-rate="\K[0-9.]+' coverage/coverage.xml)
+          COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc)
+          if (( $(echo "$COVERAGE_PCT < $MIN_COVERAGE" | bc -l) )); then
+            echo "Coverage ${COVERAGE_PCT}% is below minimum ${MIN_COVERAGE}%"
+            exit 1
+          fi
+          echo "Coverage: ${COVERAGE_PCT}%"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -49,7 +58,6 @@ jobs:
           fail_ci_if_error: true
           verbose: true
           
-      # Archive coverage reports as artifacts
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
         with:
