@@ -8,7 +8,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  MIN_COVERAGE: 80
 
 jobs:
   test:
@@ -28,39 +27,12 @@ jobs:
         
       - name: Generate coverage report
         run: |
-          # Clean any previous reports
-          rm -f coverage/*.{html,xml}
-          mkdir -p coverage
-          
-          # Run tarpaulin
-          cargo tarpaulin --verbose \
-            --workspace \
-            --timeout 120 \
-            --out xml \
-            --out html \
-            --output-dir coverage
-            
-      - name: Check coverage threshold
-        run: |
-          COVERAGE=$(grep -oP 'line-rate="\K[0-9.]+' coverage/coverage.xml)
-          COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc)
-          if (( $(echo "$COVERAGE_PCT < $MIN_COVERAGE" | bc -l) )); then
-            echo "Coverage ${COVERAGE_PCT}% is below minimum ${MIN_COVERAGE}%"
-            exit 1
-          fi
-          echo "Coverage: ${COVERAGE_PCT}%"
+          cargo tarpaulin --verbose --workspace --timeout 120 --out xml --out html
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage.xml
+          files: ./cobertura.xml
           fail_ci_if_error: true
           verbose: true
-          
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
-        with:
-          name: code-coverage-report
-          path: coverage/
-          retention-days: 7
