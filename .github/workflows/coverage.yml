@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  MIN_COVERAGE: 80
 
 jobs:
   test:
@@ -27,12 +28,31 @@ jobs:
         
       - name: Generate coverage report
         run: |
-          cargo tarpaulin --verbose --workspace --timeout 120 --out xml --out html
+          # Clean any previous reports
+          rm -f tarpaulin-report.html
+          rm -f coverage.xml
+          
+          # Run tarpaulin with coverage threshold
+          cargo tarpaulin --verbose \
+            --workspace \
+            --timeout 120 \
+            --out xml \
+            --out html \
+            --output-dir coverage \
+            --minimum-coverage $MIN_COVERAGE
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./cobertura.xml
+          files: ./coverage/coverage.xml
           fail_ci_if_error: true
           verbose: true
+          
+      # Archive coverage reports as artifacts
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-report
+          path: coverage/
+          retention-days: 7
