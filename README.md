@@ -12,10 +12,8 @@
 
 A Rust library for extracting main content from web pages using text 
 density analysis. This is an implementation of the Content Extraction 
-via Text Density (CETD) algorithm described in the paper by Fei Sun, 
-Dandan Song and Lejian Liao: 
-
-[Content Extraction via Text Density](http://ofey.me/papers/cetd-sigir11.pdf).
+via Text Density (CETD) algorithm described in the paper by 
+[Fei Sun, Dandan Song and Lejian Liao: Content Extraction via Text Density](http://ofey.me/papers/cetd-sigir11.pdf).
 
 ## What Problem Does This Solve?
 
@@ -37,24 +35,19 @@ Web pages often contain a lot of peripheral content like navigation menus, adver
 
 ## Usage
 
+Due to "LazyLock" MSRV is 1.80
+
 Basic usage example:
 
 ```rust
+use scraper::Html;
 use dom_content_extraction::{DensityTree, get_node_text};
 
-let dtree = DensityTree::from_document(&document)?; // Takes a scraper::Html document
-
-// Get nodes sorted by text density
-let sorted_nodes = dtree.sorted_nodes();
-let densest_node = sorted_nodes.last().unwrap();
-
-// Extract text from the node with highest density
-println!("{}", get_node_text(densest_node.node_id, &document)?);
-
-// For more accurate content extraction:
-dtree.calculate_density_sum()?;
-let main_content = dtree.extract_content(&document)?;
-println!("{}", main_content);
+let document = Html::parse_document(&html_content);
+let mut dtree = DensityTree::from_document(&document).unwrap();
+let _ = dtree.calculate_density_sum();
+let extracted_content = dtree.extract_content(&document).unwrap();
+println!("Extracted content:\n{}", extracted_content);
 ```
 
 ## Installation 
