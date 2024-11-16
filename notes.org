@@ -1,9 +1,10 @@
 #+title: Notes
 
 * Microtasks
-** add custom errors, remove unwraps
-** forbid unwrap in linting rules
-** TODO coverage should be 100%
+** DONE 13 Nov - updating, removing unwraps.
+*** DONE add custom errors, remove unwraps
+*** DONE forbid unwrap in linting rules
+** TODO coverage should be >80%
 ** TODO integrate trampoline or gcov into the github ci pipeline
 ** TODO cargo publish workflow
 ** TODO add clear copy-pastable example into readme.md

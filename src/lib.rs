@@ -126,8 +126,6 @@ pub mod scraper {
 
 #[derive(Debug, thiserror::Error)]
 pub enum DomExtractionError {
-    #[error("Failed to find body element")]
-    NoBodyElement,
     #[error("Failed to access tree node: {0:?}")]
     NodeAccessError(NodeId),
 }
@@ -180,7 +178,10 @@ impl<'a> DensityTree {
         let body = &document
             .select(&BODY_SELECTOR)
             .next()
-            .ok_or(DomExtractionError::NoBodyElement)?;
+            // NOTE:
+            // Since scraper always adds a body tag, this unwrap is safe
+            .expect("scraper always provides a body tag");
+
         // NOTE: there is usable value in document, such as error field
         let body_node_id = body.id();
         let body_node = body
@@ -363,7 +364,7 @@ impl<'a> DensityTree {
     /// # Examples
     ///
     /// ```no_run
-    /// let mut dtree = DensityTree::from_document(&document);
+    /// let mut dtree = DensityTree::from_document(&document).unwrap();
     /// dtree.calculate_density_sum();
     /// ```
     pub fn calculate_density_sum(&mut self) -> Result<(), DomExtractionError> {
@@ -392,7 +393,7 @@ impl<'a> DensityTree {
     /// # Examples
     ///
     /// ```no_run
-    /// let dtree = DensityTree::from_document(&document);
+    /// let dtree = DensityTree::from_document(&document).unwrap();
     /// if let Some(max_node) = dtree.get_max_density_sum_node() {
     ///     println!("Max density sum: {:?}", max_node.value().density_sum);
     /// }
@@ -421,15 +422,16 @@ impl<'a> DensityTree {
     ///
     /// # Returns
     ///
-    /// A `String` containing the extracted main content of the document.
+    /// Result with `String` containing the extracted main content of the
+    /// document or `DomExtractionError`
     ///
     /// # Examples
     ///
     /// ```no_run
     /// let document = Html::parse_document(&html_string);
-    /// let mut dtree = DensityTree::from_document(&document);
+    /// let mut dtree = DensityTree::from_document(&document).unwrap();
     /// dtree.calculate_density_sum();
-    /// let content = dtree.extract_content(&document);
+    /// let content = dtree.extract_content(&document).unwrap();
     /// println!("Extracted content: {}", content);
     /// ```
     pub fn extract_content(
@@ -548,7 +550,8 @@ pub fn get_node_by_id(
 ///
 /// # Returns
 ///
-/// * A `String` containing the concatenated text from all descendant nodes of the specified node.
+/// * Result with `String` containing the concatenated text from all descendant nodes
+///   of the specified node, or `DomExtractionError`
 pub fn get_node_text(
     node_id: NodeId,
     document: &Html,
@@ -577,7 +580,8 @@ pub fn get_node_text(
 ///
 /// # Returns
 ///
-/// * A `Vec<String>` containing the extracted links from the specified node and its descendants.
+/// * Result with `Vec<String>` containing the extracted links from the
+///   specified node and its descendants, or `DomExtractionError`
 pub fn get_node_links(
     node_id: NodeId,
     document: &Html,
@@ -605,6 +609,44 @@ mod tests {
     ) -> Result<String, io::Error> {
         let content: String = fs::read_to_string(file_path)?;
         Ok(content)
+    }
+
+    #[test]
+    fn test_body_selector_initialization() {
+        // This will force the LazyLock to initialize
+        let _ = &*BODY_SELECTOR;
+    }
+
+    #[test]
+    fn test_document_always_has_body() {
+        // Test with various malformed HTML
+        let test_cases = [
+            "",
+            "<div>No body here</div>",
+            "<<<>>>",
+            "Plain text",
+            "<html><div>No explicit body</div></html>",
+        ];
+
+        for html in test_cases {
+            let document = build_dom(html);
+            let body_elements: Vec<_> = document.select(&BODY_SELECTOR).collect();
+            assert_eq!(
+                body_elements.len(),
+                1,
+                "HTML parser should always provide a body tag"
+            );
+        }
+    }
+
+    #[test]
+    fn test_body_selector() {
+        let content = read_file("html/test_1.html").unwrap();
+        let document = build_dom(content.as_str());
+
+        // This will force initialization and use of BODY_SELECTOR
+        let body_elements: Vec<_> = document.select(&BODY_SELECTOR).collect();
+        assert_eq!(body_elements.len(), 1); // Should find exactly one body tag
     }
 
     pub fn build_dom(html: &str) -> Html {
