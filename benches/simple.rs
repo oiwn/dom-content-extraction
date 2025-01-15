@@ -31,7 +31,7 @@ fn read_file_content_from_zip(zip_path: &str, file_name: &str) -> Option<String>
     result
 }
 
-fn benchmark_test_1_html_dom_content_extaction(c: &mut Criterion) {
+fn benchmark_test_1_html_dom_content_extraction(c: &mut Criterion) {
     let content = read_file("html/test_1.html").unwrap();
     c.bench_function("test_1_dom_content_extraction", |b| {
         b.iter(|| {
@@ -122,7 +122,7 @@ fn benchmark_node_text_extraction(c: &mut Criterion) {
 
 criterion_group!(
     benches,
-    benchmark_test_1_html_dom_content_extaction,
+    benchmark_test_1_html_dom_content_extraction,
     benchmark_real_file_dom_content_extraction,
     benchmark_real_file_density_tree_calculation,
     benchmark_real_file_density_tree_calculation_and_sort,

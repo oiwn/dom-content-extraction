@@ -483,7 +483,7 @@ impl<'a> DensityTree {
 }
 
 impl std::fmt::Debug for DensityTree {
-    /// Format tree with identation
+    /// Format tree with indentation
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn pretty_print(
             f: &mut std::fmt::Formatter<'_>,
