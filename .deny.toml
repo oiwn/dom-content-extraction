@@ -2,5 +2,4 @@
 allow = [
     "Apache-2.0",
     "MIT",
-    "Apache-2.0 OR MIT"
 ]
