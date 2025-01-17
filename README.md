@@ -1,15 +1,9 @@
 # dom-content-extraction
 
-<div align="center">
-   <a href="https://crates.io/crates/dom-content-extraction">
-        <img src="https://img.shields.io/crates/dr/dom-content-extraction" alt="Crates.io">
-    </a>
-  <a href="https://codecov.io/github/oiwn/dom-content-extraction" > 
-   <img src="https://codecov.io/github/oiwn/dom-content-extraction/graph/badge.svg?token=6Y7IYX29OP"/> 
-   </a>
-  [![dependency status](https://deps.rs/repo/github/oiwn/dom-content-extraction/status.svg)](https://deps.rs/repo/github/oiwn/dom-content-extraction)
-</div>
-
+![Crates.io Downloads (recent)](https://img.shields.io/crates/dr/dom-content-extraction)
+![GitHub License](https://img.shields.io/github/license/oiwn/dom-content-extraction)
+[![codecov](https://codecov.io/gh/oiwn/dom-content-extraction/graph/badge.svg?token=6Y7IYX29OP)](https://codecov.io/gh/oiwn/dom-content-extraction)
+[![dependency status](https://deps.rs/repo/github/oiwn/dom-content-extraction/status.svg)](https://deps.rs/repo/github/oiwn/dom-content-extraction)
 
 A Rust library for extracting main content from web pages using text 
 density analysis. This is an implementation of the Content Extraction 
