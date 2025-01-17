@@ -7,6 +7,7 @@
   <a href="https://codecov.io/github/oiwn/dom-content-extraction" > 
    <img src="https://codecov.io/github/oiwn/dom-content-extraction/graph/badge.svg?token=6Y7IYX29OP"/> 
    </a>
+  [![dependency status](https://deps.rs/repo/github/oiwn/dom-content-extraction/status.svg)](https://deps.rs/repo/github/oiwn/dom-content-extraction)
 </div>
 
 
