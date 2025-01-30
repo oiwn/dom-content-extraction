@@ -1,14 +1,17 @@
 #+title: Notes
 
+* Unicode documents handling
+** TODO I think there are problems processing unicode.
+
 * Microtasks
-** Better split for CI/CD workflows
+** DONE Better split for CI/CD workflows
 ** DONE 13 Nov - updating, removing unwraps.
 *** DONE add custom errors, remove unwraps
 *** DONE forbid unwrap in linting rules
-** TODO coverage should be >80%
-** TODO integrate cargo-tarpaulin or gcov into the github ci pipeline
+** DONE coverage should be >80%
+** DONE integrate cargo-tarpaulin or gcov into the github ci pipeline
 ** TODO cargo publish workflow
-** TODO add clear copy-pastable example into readme.md
+** DONE add clear copy-pastable example into readme.md
 ** DONE need "examples" command for "lorem ipsum" test page
 ** DONE need "benchmark"
 ** DONE need to implement testing among real data set
