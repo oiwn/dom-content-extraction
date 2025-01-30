@@ -8,7 +8,7 @@
 A Rust library for extracting main content from web pages using text 
 density analysis. This is an implementation of the Content Extraction 
 via Text Density (CETD) algorithm described in the paper by 
-[Fei Sun, Dandan Song and Lejian Liao: Content Extraction via Text Density](http://ofey.me/papers/cetd-sigir11.pdf).
+[Fei Sun, Dandan Song and Lejian Liao: Content Extraction via Text Density](https://ofey.me/assets/pdf/cetd-sigir11.pdf).
 
 ## What Problem Does This Solve?
 
