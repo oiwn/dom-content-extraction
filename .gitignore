@@ -9,3 +9,5 @@
 /data
 *.profraw
 all_code.txt
+.code
+.amc.toml

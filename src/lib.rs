@@ -885,4 +885,35 @@ mod tests {
 
         assert!(!extracted_content.contains("Menu"));
     }
+
+    #[test]
+    fn test_document_node_handling() {
+        // Create a minimal HTML document that forces Document node traversal
+        let html = r#"<!DOCTYPE html><html><body><div>Test</div></body></html>"#;
+        let document = Html::parse_document(html);
+
+        // Get the root node which should be a Document node
+        let root_node = document.tree.root();
+        assert!(matches!(root_node.value(), scraper::Node::Document));
+
+        // Create a DensityTree starting from root to ensure Document node is encountered
+        let mut density_tree = DensityTree::new(root_node.id());
+        DensityTree::build_density_tree(
+            root_node,
+            &mut density_tree.tree.root_mut(),
+            1,
+        );
+
+        // If we reach here without panicking and the tree is built,
+        // it means the Document node was properly skipped
+        assert!(density_tree.tree.root().children().count() > 0);
+
+        // Verify the content is still processed despite skipping Document node
+        let text_nodes: Vec<_> = density_tree
+            .tree
+            .nodes()
+            .filter(|n| n.value().char_count > 0)
+            .collect();
+        assert!(!text_nodes.is_empty());
+    }
 }
