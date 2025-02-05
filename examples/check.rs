@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
-use dom_content_extraction::{get_node_text, scraper::Html, DensityTree};
+use dom_content_extraction::{
+    get_content, get_node_text, scraper::Html, DensityTree,
+};
 use std::fs;
 
 #[derive(Parser)]
@@ -13,6 +15,7 @@ struct Cli {
 enum Commands {
     LoremIpsum,
     Test4,
+    TestToy,
 }
 
 fn main() {
@@ -20,17 +23,19 @@ fn main() {
 
     match &cli.command {
         Commands::LoremIpsum => {
-            println!("Processing Lorem Ipsum example...");
             process_lorem_ipsum();
         }
         Commands::Test4 => {
-            println!("Processing test_4 example...");
             process_test_4_html();
+        }
+        Commands::TestToy => {
+            process_toy();
         }
     }
 }
 
 fn process_lorem_ipsum() {
+    println!("Processing Lorem Ipsum example...");
     let html_content =
         fs::read_to_string("html/lorem_ipsum.html").expect("Unable to read file");
     let document = Html::parse_document(&html_content);
@@ -41,6 +46,7 @@ fn process_lorem_ipsum() {
 }
 
 fn process_test_4_html() {
+    println!("Processing test_4 example...");
     let html_content =
         fs::read_to_string("html/test_4.html").expect("Unable to read file");
     let document = Html::parse_document(&html_content);
@@ -55,4 +61,22 @@ fn process_test_4_html() {
         "Highest density node:\n{}",
         get_node_text(densest_node.node_id, &document).unwrap()
     );
+}
+
+fn process_toy() {
+    let html = r#"
+        <!DOCTYPE html><html><body>
+            <nav>Navigation</nav>
+            <article>
+                <h1>Main Article</h1>
+                <p>This is the primary content that should be extracted.</p>
+            </article>
+            <footer>Footer</footer>
+        </body></html>
+    "#;
+
+    println!("Extracting content from toy html: \n{}\n ", html);
+    let document = Html::parse_document(html);
+    let content = get_content(&document).unwrap();
+    println!("{}", content);
 }

@@ -1,7 +1,7 @@
-use crate::cetd::BODY_SELECTOR;
 use crate::DomExtractionError;
 use ego_tree::NodeId;
 use scraper::Html;
+#[cfg(test)]
 use std::{fs, io, path};
 
 /// Helper function to extract a node with the given `NodeId`
@@ -109,12 +109,33 @@ pub(crate) fn build_dom_from_file(test_file_name: &str) -> Html {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
+    use crate::cetd::BODY_SELECTOR;
+
+    const TEST_1_HTML: &str = include_str!("../html/test_1.html");
+    const TEST_2_HTML: &str = include_str!("../html/test_2.html");
+
+    #[test]
+    fn test_body_selector() {
+        // let content = read_file("html/test_1.html").unwrap();
+        // let document = build_dom(content.as_str());
+        let document = build_dom(TEST_1_HTML);
+
+        // This will force initialization and use of BODY_SELECTOR
+        let body_elements: Vec<_> = document.select(&BODY_SELECTOR).collect();
+        assert_eq!(body_elements.len(), 1); // Should find exactly one body tag
+    }
 
     #[test]
     fn test_load_file() {
         let content = read_file("html/test_1.html");
         assert!(content.is_ok());
         assert!(!content.unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_build_dom() {
+        let document = build_dom(TEST_2_HTML);
+        assert!(document.errors.len() == 1);
     }
 
     #[test]

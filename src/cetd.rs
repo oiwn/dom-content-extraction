@@ -192,7 +192,8 @@ impl<'a> DensityTree {
                 // count buttons and selects as links as well
                 if elem.name() == "a"
                     || elem.name() == "button"
-                    || elem.name() == "select "
+                    || elem.name() == "select"
+                    || elem.name() == "nav"
                 {
                     let link_tag_count = 1;
                     density_node.value().link_tag_count += link_tag_count;
@@ -408,22 +409,6 @@ mod tests {
     fn test_normalize_denominator() {
         assert_eq!(normalize_denominator(32), 32.0);
         assert_eq!(normalize_denominator(0), 1.0);
-    }
-
-    #[test]
-    fn test_build_dom() {
-        let document = build_dom_from_file("test_2.html");
-        assert!(document.errors.len() == 1);
-    }
-
-    #[test]
-    fn test_body_selector() {
-        let content = read_file("html/test_1.html").unwrap();
-        let document = build_dom(content.as_str());
-
-        // This will force initialization and use of BODY_SELECTOR
-        let body_elements: Vec<_> = document.select(&BODY_SELECTOR).collect();
-        assert_eq!(body_elements.len(), 1); // Should find exactly one body tag
     }
 
     #[test]
