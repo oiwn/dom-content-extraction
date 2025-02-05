@@ -1,8 +1,11 @@
+use crate::cetd::BODY_SELECTOR;
 use crate::DomExtractionError;
 use ego_tree::NodeId;
 use scraper::Html;
+use std::{fs, io, path};
 
-/// Helper function to extract a node with the given `NodeId` from a `scraper::Html` document.
+/// Helper function to extract a node with the given `NodeId`
+/// from a `scraper::Html` document.
 ///
 /// # Arguments
 ///
@@ -34,8 +37,8 @@ pub fn get_node_by_id(
 ///
 /// # Returns
 ///
-/// * Result with `String` containing the concatenated text from all descendant nodes
-///   of the specified node, or `DomExtractionError`
+/// * Result with `String` containing the concatenated text from all
+///   descendant nodes of the specified node, or `DomExtractionError`
 pub fn get_node_text(
     node_id: NodeId,
     document: &Html,
@@ -80,4 +83,59 @@ pub fn get_node_links(
         };
     }
     Ok(links)
+}
+
+#[cfg(test)]
+pub(crate) fn build_dom(html: &str) -> Html {
+    let document: Html = Html::parse_document(html);
+    document
+}
+
+#[cfg(test)]
+pub(crate) fn read_file(
+    file_path: impl AsRef<path::Path>,
+) -> Result<String, io::Error> {
+    let content: String = fs::read_to_string(file_path)?;
+    Ok(content)
+}
+
+#[cfg(test)]
+pub(crate) fn build_dom_from_file(test_file_name: &str) -> Html {
+    let content = read_file(format!("html/{}", test_file_name)).unwrap();
+    build_dom(content.as_str())
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_file() {
+        let content = read_file("html/test_1.html");
+        assert!(content.is_ok());
+        assert!(!content.unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_document_always_has_body() {
+        // Test with various malformed HTML
+        let test_cases = [
+            "",
+            "<div>No body here</div>",
+            "<<<>>>",
+            "Plain text",
+            "<html><div>No explicit body</div></html>",
+        ];
+
+        for html in test_cases {
+            let document = build_dom(html);
+            let body_elements: Vec<_> = document.select(&BODY_SELECTOR).collect();
+            assert_eq!(
+                body_elements.len(),
+                1,
+                "HTML parser should always provide a body tag"
+            );
+        }
+    }
 }

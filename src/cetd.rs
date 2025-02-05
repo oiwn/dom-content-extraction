@@ -4,7 +4,7 @@ use scraper::{Html, Selector};
 use std::sync::LazyLock;
 
 /// Selector for <body> tag
-static BODY_SELECTOR: LazyLock<Selector> = LazyLock::new(|| {
+pub static BODY_SELECTOR: LazyLock<Selector> = LazyLock::new(|| {
     Selector::parse("body").expect("Can't be (parsing body selector)")
 });
 
@@ -63,7 +63,7 @@ impl<'a> DensityTree {
             .ok_or(DomExtractionError::NodeAccessError(body_node_id))?;
 
         let mut density_tree = Self::new(body_node_id);
-        Self::build_density_tree(body_node, &mut density_tree.tree.root_mut(), 1);
+        Self::build_density_tree(body_node, &mut density_tree.tree.root_mut());
         density_tree.calculate_density_tree();
         Ok(density_tree)
     }
@@ -153,7 +153,6 @@ impl<'a> DensityTree {
     pub fn build_density_tree(
         node: ego_tree::NodeRef<scraper::node::Node>,
         density_node: &mut ego_tree::NodeMut<DensityNode>,
-        _depth: usize,
     ) {
         for child in node.children() {
             // some nodes makes no sense
@@ -177,7 +176,7 @@ impl<'a> DensityTree {
 
             let child_density_node = DensityNode::new(child.id());
             let mut te = density_node.append(child_density_node);
-            Self::build_density_tree(child, &mut te, _depth + 1);
+            Self::build_density_tree(child, &mut te);
         }
 
         // Here dive into the deepest recurstion depth
@@ -395,20 +394,9 @@ impl DensityNode {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use crate::utils::{get_node_by_id, get_node_links};
-    use std::{fs, io, path};
-
-    pub fn build_dom(html: &str) -> Html {
-        let document: Html = Html::parse_document(html);
-        document
-    }
-
-    pub fn read_file(
-        file_path: impl AsRef<path::Path>,
-    ) -> Result<String, io::Error> {
-        let content: String = fs::read_to_string(file_path)?;
-        Ok(content)
-    }
+    use crate::utils::{
+        build_dom, build_dom_from_file, get_node_by_id, get_node_links, read_file,
+    };
 
     #[test]
     fn test_body_selector_initialization() {
@@ -423,42 +411,8 @@ mod tests {
     }
 
     #[test]
-    fn test_document_always_has_body() {
-        // Test with various malformed HTML
-        let test_cases = [
-            "",
-            "<div>No body here</div>",
-            "<<<>>>",
-            "Plain text",
-            "<html><div>No explicit body</div></html>",
-        ];
-
-        for html in test_cases {
-            let document = build_dom(html);
-            let body_elements: Vec<_> = document.select(&BODY_SELECTOR).collect();
-            assert_eq!(
-                body_elements.len(),
-                1,
-                "HTML parser should always provide a body tag"
-            );
-        }
-    }
-
-    fn load_content(test_file_name: &str) -> Html {
-        let content = read_file(format!("html/{}", test_file_name)).unwrap();
-        build_dom(content.as_str())
-    }
-
-    #[test]
-    fn test_load_file() {
-        let content = read_file("html/test_1.html");
-        assert!(content.is_ok());
-        assert!(!content.unwrap().is_empty());
-    }
-
-    #[test]
     fn test_build_dom() {
-        let document = load_content("test_2.html");
+        let document = build_dom_from_file("test_2.html");
         assert!(document.errors.len() == 1);
     }
 
@@ -483,7 +437,7 @@ mod tests {
 
     #[test]
     fn test_sorted_density_results() {
-        let document = load_content("test_1.html");
+        let document = build_dom_from_file("test_1.html");
 
         let dtree = DensityTree::from_document(&document).unwrap();
         let sorted_nodes = dtree.sorted_nodes();
@@ -651,7 +605,6 @@ mod tests {
         DensityTree::build_density_tree(
             root_node,
             &mut density_tree.tree.root_mut(),
-            1,
         );
 
         // If we reach here without panicking and the tree is built,

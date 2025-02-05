@@ -121,13 +121,23 @@ pub mod utils;
 pub use cetd::{DensityNode, DensityTree};
 pub use utils::{get_node_links, get_node_text};
 
-/// Re-export scraper crate
-pub mod scraper {
-    pub use scraper::*;
-}
+// Re-export scraper crate
+// (NOTE: this is strange trick, or maybe used in older rust versions)
+// pub mod scraper {
+//     pub use scraper::*;
+// }
+
+// Re export
+pub use scraper;
 
 #[derive(Debug, thiserror::Error)]
 pub enum DomExtractionError {
     #[error("Failed to access tree node: {0:?}")]
     NodeAccessError(NodeId),
+}
+
+pub fn get_content(document: &scraper::Html) -> Result<String, DomExtractionError> {
+    let mut dtree = DensityTree::from_document(document)?;
+    dtree.calculate_density_sum()?;
+    dtree.extract_content(document)
 }
