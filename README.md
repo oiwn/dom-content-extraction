@@ -36,13 +36,26 @@ Basic usage example:
 
 ```rust
 use scraper::Html;
-use dom_content_extraction::{DensityTree, get_node_text};
+use dom_content_extraction::get_content;
 
-let document = Html::parse_document(&html_content);
-let mut dtree = DensityTree::from_document(&document).unwrap();
-let _ = dtree.calculate_density_sum();
-let extracted_content = dtree.extract_content(&document).unwrap();
-println!("Extracted content:\n{}", extracted_content);
+fn main() {
+    let html = r#"<!DOCTYPE html><html><body>
+        <nav>Home | About</nav>
+        <main>
+            <article>
+                <h1>Main Article</h1>
+                <p>This is the primary content that contains enough text to maintain proper density metrics. The paragraph needs sufficient length to establish text-to-link ratio.</p>
+                <p>Second paragraph adds more textual density to ensure the content extraction algorithm works correctly.</p>
+                <a href="\#">Related link</a>
+            </article>
+        </main>
+        <footer>Copyright 2024</footer>
+    </body></html>"#;
+
+    let document = Html::parse_document(html);
+    let content = get_content(&document).unwrap();
+    println!("{}", content);
+}
 ```
 
 ## Installation 
