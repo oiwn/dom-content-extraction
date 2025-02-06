@@ -109,7 +109,7 @@ pub(crate) fn build_dom_from_file(test_file_name: &str) -> Html {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use crate::cetd::BODY_SELECTOR;
+    use crate::tree::BODY_SELECTOR;
 
     const TEST_1_HTML: &str = include_str!("../html/test_1.html");
     const TEST_2_HTML: &str = include_str!("../html/test_2.html");

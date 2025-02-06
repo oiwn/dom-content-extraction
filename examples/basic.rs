@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 use dom_content_extraction::{get_content, scraper::Html};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let html = r#"
+    /* let html = r#"
         <!DOCTYPE html><html><body>
             <nav>Navigation</nav>
             <article>
@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
            </article>
        </main>
        <footer>Copyright 2024</footer>
-    </body></html>"#;
+    </body></html>"#; */
 
     let html = r#"<!DOCTYPE html><html><body>
         <nav>Home | About</nav>

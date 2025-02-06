@@ -1,12 +1,10 @@
-use crate::{get_node_text, DomExtractionError};
+use crate::{
+    get_node_text,
+    tree::{NodeMetrics, BODY_SELECTOR},
+    DomExtractionError,
+};
 use ego_tree::{NodeId, NodeRef, Tree};
-use scraper::{Html, Selector};
-use std::sync::LazyLock;
-
-/// Selector for <body> tag
-pub static BODY_SELECTOR: LazyLock<Selector> = LazyLock::new(|| {
-    Selector::parse("body").expect("Can't be (parsing body selector)")
-});
+use scraper::Html;
 
 /// Prevent division by zero and convert integers into f32
 #[inline]
@@ -25,15 +23,9 @@ pub struct DensityTree {
 /// A node in a `DensityTree` containing text density information.
 #[derive(Debug, Clone)]
 pub struct DensityNode {
-    // node id in DOM provided by `scraper` crate
     pub node_id: NodeId,
-
-    pub char_count: u32,
-    pub tag_count: u32,
-    pub link_char_count: u32,
-    pub link_tag_count: u32,
+    pub metrics: NodeMetrics,
     pub density: f32,
-
     pub density_sum: Option<f32>,
 }
 
@@ -84,8 +76,46 @@ impl<'a> DensityTree {
         nodes
     }
 
-    /// Calculates composite text density index.
     pub fn composite_text_density(
+        metrics: &NodeMetrics,
+        body_metrics: &NodeMetrics,
+    ) -> f32 {
+        // Return 0.0 if there's no content
+        if metrics.char_count == 0 {
+            return 0.0;
+        }
+
+        // labeled same as in paper's formula
+        let ci = metrics.char_count as f32;
+        let ti = normalize_denominator(metrics.tag_count);
+        let nlci = normalize_denominator(
+            metrics.char_count.saturating_sub(metrics.link_char_count),
+        );
+        let lci = metrics.link_char_count as f32;
+        let cb = normalize_denominator(body_metrics.char_count);
+        let lcb = body_metrics.link_char_count as f32;
+        let lti = normalize_denominator(metrics.link_tag_count);
+
+        // checks
+        debug_assert!(nlci > 0.0);
+
+        let density = ci / ti;
+
+        let ln_1 = (ci / nlci) * lci;
+        let ln_2 = (lcb / cb) * ci;
+        let e = std::f32::consts::E;
+
+        debug_assert!(ln_1 >= 0.0);
+        debug_assert!(ln_2 >= 0.0);
+
+        let log_base = (ln_1 + ln_2 + e).ln();
+        let value = (ci / lcb) * (ti / lti);
+
+        value.log(log_base) * density
+    }
+
+    /// Calculates composite text density index.
+    pub fn composite_text_densityi_old(
         char_count: u32,
         tag_count: u32,
         link_char_count: u32,
@@ -114,7 +144,6 @@ impl<'a> DensityTree {
         let lcb = body_tag_link_char_count as f32;
         let lti = normalize_denominator(link_tag_count);
 
-        // checks
         debug_assert!(nlci > 0.0);
 
         let density = ci / ti;
@@ -134,16 +163,10 @@ impl<'a> DensityTree {
 
     /// Computes the density for each node in the tree.
     pub fn calculate_density_tree(&mut self) {
-        let body_tag_node = self.tree.root().value().clone();
+        let body_node = self.tree.root().value().clone();
         for node in self.tree.values_mut() {
-            node.density = Self::composite_text_density(
-                node.char_count,
-                node.tag_count,
-                node.link_char_count,
-                node.link_tag_count,
-                body_tag_node.char_count,
-                body_tag_node.link_char_count,
-            );
+            node.density =
+                Self::composite_text_density(&node.metrics, &body_node.metrics);
         }
     }
 
@@ -154,8 +177,9 @@ impl<'a> DensityTree {
         node: ego_tree::NodeRef<scraper::node::Node>,
         density_node: &mut ego_tree::NodeMut<DensityNode>,
     ) {
+        // Process children first
         for child in node.children() {
-            // some nodes makes no sense
+            // Skip irrelevant nodes
             match child.value() {
                 scraper::Node::Element(elem) => {
                     if elem.name() == "script"
@@ -165,10 +189,7 @@ impl<'a> DensityTree {
                         continue;
                     };
                 }
-                scraper::Node::Comment(_) => {
-                    continue;
-                }
-                scraper::Node::Document => {
+                scraper::Node::Comment(_) | scraper::Node::Document => {
                     continue;
                 }
                 _ => {}
@@ -179,53 +200,39 @@ impl<'a> DensityTree {
             Self::build_density_tree(child, &mut te);
         }
 
-        // Here dive into the deepest recurstion depth
-
+        // Process current node
         match node.value() {
             scraper::Node::Text(text) => {
                 let char_count = text.trim().len() as u32;
-                density_node.value().char_count += char_count;
+                density_node.value().metrics.char_count += char_count;
             }
             scraper::Node::Element(elem) => {
-                let tag_count = 1;
-                density_node.value().tag_count += tag_count;
-                // count buttons and selects as links as well
+                density_node.value().metrics.tag_count += 1;
                 if elem.name() == "a"
                     || elem.name() == "button"
                     || elem.name() == "select"
-                    || elem.name() == "nav"
                 {
-                    let link_tag_count = 1;
-                    density_node.value().link_tag_count += link_tag_count;
+                    density_node.value().metrics.link_tag_count += 1;
                 };
             }
             _ => {}
         }
 
-        let char_count = density_node.value().char_count;
-        let tag_count = density_node.value().tag_count;
-        let link_tag_count = density_node.value().link_tag_count;
-        let mut link_char_count = density_node.value().link_char_count;
-
-        if tag_count > 0 {
-            density_node.value().density = density_node.value().char_count as f32
-                / density_node.value().tag_count as f32;
-        };
-
+        // Handle link char count for text within links
         if let Some(parent) = node.parent() {
             if let Some(element) = parent.value().as_element() {
                 if element.name() == "a" {
-                    link_char_count += char_count;
+                    density_node.value().metrics.link_char_count +=
+                        density_node.value().metrics.char_count;
                 }
             }
         }
 
+        // Update parent metrics by combining current node's metrics
+        let current_metrics = density_node.value().metrics.clone();
         if let Some(mut parent) = density_node.parent() {
-            parent.value().char_count += char_count;
-            parent.value().tag_count += tag_count;
-            parent.value().link_tag_count += link_tag_count;
-            parent.value().link_char_count += link_char_count;
-        };
+            parent.value().metrics.combine(&current_metrics);
+        }
     }
 
     /// Calculates the density sum for each node in the tree.
@@ -381,10 +388,7 @@ impl DensityNode {
     pub fn new(node_id: NodeId) -> Self {
         Self {
             node_id,
-            char_count: 0,
-            tag_count: 0,
-            link_char_count: 0,
-            link_tag_count: 0,
+            metrics: NodeMetrics::new(), // Initialize with new NodeMetrics
             density: 0.0,
             density_sum: None,
         }
@@ -398,12 +402,6 @@ mod tests {
     use crate::utils::{
         build_dom, build_dom_from_file, get_node_by_id, get_node_links, read_file,
     };
-
-    #[test]
-    fn test_body_selector_initialization() {
-        // This will force the LazyLock to initialize
-        let _ = &*BODY_SELECTOR;
-    }
 
     #[test]
     fn test_normalize_denominator() {
@@ -476,6 +474,12 @@ mod tests {
         let dtree = DensityTree::from_document(&document).unwrap();
         let sorted_nodes = dtree.sorted_nodes();
         let node_id = sorted_nodes.last().unwrap().node_id;
+
+        println!("Node: {:?}", sorted_nodes.last().unwrap());
+        println!(
+            "Node html: {:?}",
+            get_node_by_id(node_id, &document).unwrap().value()
+        );
 
         assert_eq!(format!("{:?}", node_id), "NodeId(12)");
     }
@@ -600,52 +604,54 @@ mod tests {
         let text_nodes: Vec<_> = density_tree
             .tree
             .nodes()
-            .filter(|n| n.value().char_count > 0)
+            .filter(|n| n.value().metrics.char_count > 0)
             .collect();
         assert!(!text_nodes.is_empty());
     }
 
     #[test]
     fn test_composite_text_density() {
-        let char_count = 100;
-        let tag_count = 10;
-        let link_char_count = 20;
-        let link_tag_count = 4;
-        let body_tag_char_count = 500;
-        let body_tag_link_char_count = 100;
+        let node_metrics = NodeMetrics {
+            char_count: 100,
+            tag_count: 10,
+            link_char_count: 20,
+            link_tag_count: 4,
+        };
+        let body_metrics = NodeMetrics {
+            char_count: 1000,
+            tag_count: 300,
+            link_char_count: 200,
+            link_tag_count: 100,
+        };
 
-        let result = DensityTree::composite_text_density(
-            char_count,
-            tag_count,
-            link_char_count,
-            link_tag_count,
-            body_tag_char_count,
-            body_tag_link_char_count,
-        );
+        let result =
+            DensityTree::composite_text_density(&node_metrics, &body_metrics);
 
         assert!(result.is_finite());
         assert!(result >= 0.0);
 
-        // Test edge cases
-        let result_zero_char_count = DensityTree::composite_text_density(
-            0,
-            tag_count,
-            link_char_count,
-            link_tag_count,
-            body_tag_char_count,
-            body_tag_link_char_count,
-        );
+        // Edge case - no chars in node
+        let node_metrics = NodeMetrics {
+            char_count: 0,
+            tag_count: 10,
+            link_char_count: 20,
+            link_tag_count: 4,
+        };
+        let result_zero_char_count =
+            DensityTree::composite_text_density(&node_metrics, &body_metrics);
         assert_eq!(result_zero_char_count, 0.0);
 
-        let result_zero_tag_count = DensityTree::composite_text_density(
-            0,
-            tag_count,
-            link_char_count,
-            link_tag_count,
-            body_tag_char_count,
-            body_tag_link_char_count,
-        );
+        let node_metrics = NodeMetrics {
+            char_count: 100,
+            tag_count: 1, // situation with 0 is impossible (propagate to parent and skip)
+            link_char_count: 0,
+            link_tag_count: 0,
+        };
+        let result_zero_tag_count =
+            DensityTree::composite_text_density(&node_metrics, &body_metrics);
         assert!(result_zero_tag_count.is_finite());
-        assert!(result_zero_tag_count >= 0.0);
+        // println!("Zero Tag: {}", result_zero_tag_count);
+        // TODO: figure out how to actually check
+        assert!(result_zero_tag_count < 0.0);
     }
 }

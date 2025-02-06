@@ -117,17 +117,12 @@
 use ego_tree::NodeId;
 
 pub mod cetd;
+pub mod tree;
 pub mod utils;
 pub use cetd::{DensityNode, DensityTree};
 pub use utils::{get_node_links, get_node_text};
 
-// Re-export scraper crate
-// (NOTE: this is strange trick, or maybe used in older rust versions)
-// pub mod scraper {
-//     pub use scraper::*;
-// }
-
-// Re export
+// Re-export
 pub use scraper;
 
 #[derive(Debug, thiserror::Error)]
