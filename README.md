@@ -127,7 +127,77 @@ Overall Performance:
 [Read documentation on docs.rs](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)
 
 
-### Desired features
+## Binary Usage
 
-- [ ] implement normal scoring
-- [ ] create real world dataset
+The crate includes a command-line binary tool `dce` (DOM Content Extraction) for extracting main content from HTML documents. It supports both local files and remote URLs as input sources.
+
+### Installation
+
+The binary is included by default. You can install it using cargo:
+
+```bash
+cargo install dom-content-extraction
+```
+
+### Command-Line Options
+
+```
+dce [OPTIONS]
+
+Options:
+  -u, --url <URL>        URL to fetch HTML content from
+  -f, --file <FILE>      Local HTML file to process
+  -o, --output <FILE>    Output file (stdout if not specified)
+  -h, --help            Print help
+  -V, --version         Print version
+```
+
+Note: Either `--url` or `--file` must be specified, but not both.
+
+### Features
+
+- **URL Fetching**: Automatically downloads HTML content from specified URLs
+- **Timeout Control**: 30-second timeout for URL fetching to prevent hangs
+- **Error Handling**: Comprehensive error messages for common failure cases
+- **Flexible Output**: Write to file or stdout
+- **Temporary File Management**: Automatic cleanup of downloaded content
+
+### Examples
+
+Extract content from a URL and print to stdout:
+```bash
+dce --url "https://example.com/article"
+```
+
+Process a local HTML file and save to output file:
+```bash
+dce --file input.html --output extracted.txt
+```
+
+Extract from URL and save directly to file:
+```bash
+dce --url "https://example.com/page" --output content.txt
+```
+
+### Error Handling
+
+The binary provides clear error messages for common scenarios:
+
+- Invalid URLs
+- Network timeouts
+- File access issues
+- HTML parsing errors
+- Content extraction failures
+
+### Dependencies
+
+The binary functionality requires the following additional dependencies:
+
+- `clap`: Command-line argument parsing
+- `reqwest`: HTTP client for URL fetching
+- `tempfile`: Temporary file management
+- `url`: URL parsing and validation
+- `anyhow`: Error handling
+
+These dependencies are only included when building with the default `cli` feature.
+
