@@ -30,9 +30,26 @@ Web pages often contain a lot of peripheral content like navigation menus, adver
 - Build a density tree representing text distribution in the HTML document
 - Calculate composite text density using multiple metrics
 - Extract main content blocks based on density patterns
+- Unicode Support
 - Support for nested HTML structures
 - Efficient processing of large documents
 - Error handling for malformed HTML
+
+## Unicode Support
+
+DOM Content Extraction includes robust Unicode support for handling multilingual content:
+
+- Proper character counting using Unicode grapheme clusters
+- Unicode normalization (NFC) for consistent text representation
+- Support for various writing systems including Latin, Cyrillic, and CJK scripts
+- Accurate text density calculations across different languages
+
+This ensures accurate content extraction from web pages in any language, with proper handling of:
+
+- Combining characters (like accents in European languages)
+- Bidirectional text
+- Complex script rendering
+- Multi-code-point graphemes (like emojis)
 
 ## Usage
 

@@ -1,9 +1,13 @@
+// TODO: whole thing should be optimized because now it's really too much slow!
 use anyhow::{Context, Result};
-use dom_content_extraction::scraper::Html;
-use dom_content_extraction::DensityTree;
+use dom_content_extraction::{DensityTree, scraper::Html};
 use rayon::prelude::*;
 use regex::Regex;
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::Path,
+    time::{Duration, Instant},
+};
 
 fn normalize_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<&str>>().join(" ")
@@ -80,7 +84,11 @@ fn calculate_lcs(s1: &str, s2: &str) -> usize {
     prev[n]
 }
 
-fn process_file_pair(txt_path: &Path, html_path: &Path) -> Result<(f64, f64, f64)> {
+fn process_file_pair(
+    txt_path: &Path,
+    html_path: &Path,
+) -> Result<(f64, f64, f64, Duration)> {
+    let file_start = Instant::now();
     let clean_content = clean_txt_file(txt_path)?;
     let clean_content = clean_and_normalize_text(&clean_content);
 
@@ -95,12 +103,15 @@ fn process_file_pair(txt_path: &Path, html_path: &Path) -> Result<(f64, f64, f64
     let recall = lcs_length as f64 / clean_content.len() as f64;
     let f1_score = 2.0 * (precision * recall) / (precision + recall);
 
-    Ok((precision, recall, f1_score))
+    let duration = file_start.elapsed();
+
+    Ok((precision, recall, f1_score, duration))
 }
 
 fn main() -> Result<()> {
     let gold_standard_dir = Path::new("data/GoldStandard");
     let html_input_dir = Path::new("data/finalrun-input");
+    let start_time = Instant::now();
 
     let entries: Vec<_> =
         fs::read_dir(gold_standard_dir)?.collect::<std::io::Result<Vec<_>>>()?;
@@ -115,7 +126,7 @@ fn main() -> Result<()> {
 
                 if html_path.exists() {
                     match process_file_pair(&path, &html_path) {
-                        Ok((precision, recall, f1))
+                        Ok((precision, recall, f1, duration))
                             if !precision.is_nan()
                                 && !recall.is_nan()
                                 && !f1.is_nan() =>
@@ -124,6 +135,11 @@ fn main() -> Result<()> {
                             println!("  Precision: {:.2}", precision);
                             println!("  Recall: {:.2}", recall);
                             println!("  F1 Score: {:.2}", f1);
+                            println!("  Processing time: {:.2?}", duration);
+                            // If you want to highlight slow files:
+                            if duration > Duration::from_millis(500) {
+                                println!("  ⚠️ SLOW PROCESSING");
+                            }
                             println!();
                             Some((precision, recall, f1))
                         }
@@ -171,6 +187,13 @@ fn main() -> Result<()> {
     println!("  Average Precision: {:.2}", avg_precision);
     println!("  Average Recall: {:.2}", avg_recall);
     println!("  Average F1 Score: {:.2}", avg_f1);
+
+    let total_duration = start_time.elapsed();
+    println!("Total processing time: {:.2?}", total_duration);
+    println!(
+        "Average time per file: {:.2?}",
+        total_duration / total_results as u32
+    );
 
     Ok(())
 }

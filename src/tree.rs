@@ -44,7 +44,9 @@ impl TreeBuilder for HtmlTreeBuilder<'_> {
 
         match node.value() {
             scraper::Node::Text(text) => {
-                metrics.char_count = text.trim().len() as u32;
+                // NOTE: old method calculation
+                // metrics.char_count = text.trim().len() as u32;
+                metrics.char_count = crate::unicode::count_graphemes(text.trim());
             }
             scraper::Node::Element(elem) => {
                 metrics.tag_count = 1;
