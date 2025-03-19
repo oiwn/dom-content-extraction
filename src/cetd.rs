@@ -1,7 +1,6 @@
 use crate::{
-    get_node_text,
-    tree::{NodeMetrics, BODY_SELECTOR},
-    DomExtractionError,
+    DomExtractionError, get_node_text,
+    tree::{BODY_SELECTOR, NodeMetrics},
 };
 use ego_tree::{NodeId, NodeRef, Tree};
 use scraper::Html;
@@ -203,7 +202,10 @@ impl<'a> DensityTree {
         // Process current node
         match node.value() {
             scraper::Node::Text(text) => {
-                let char_count = text.trim().len() as u32;
+                // let char_count = text.trim().len() as u32;
+                // density_node.value().metrics.char_count += char_count;
+                // NOTE: adding unicode support
+                let char_count = crate::unicode::count_graphemes(text.trim());
                 density_node.value().metrics.char_count += char_count;
             }
             scraper::Node::Element(elem) => {
@@ -355,7 +357,8 @@ impl<'a> DensityTree {
                     seen_text.insert(node_text);
                 }
             }
-            Ok(content.trim().to_string())
+            // Ok(content.trim().to_string())
+            Ok(crate::unicode::normalize_text(&content))
         } else {
             Ok(String::new())
         }
@@ -442,7 +445,13 @@ mod tests {
         let dtree = DensityTree::from_document(&document).unwrap();
         let sorted_nodes = dtree.sorted_nodes();
         let node_id = sorted_nodes.last().unwrap().node_id;
-        assert_eq!(get_node_text(node_id, &document).unwrap().len(), 200);
+        assert_eq!(
+            crate::unicode::count_graphemes(
+                &get_node_text(node_id, &document).unwrap()
+            ),
+            186
+        );
+        // assert_eq!(get_node_text(node_id, &document).unwrap().len(), 200);
     }
 
     #[test]
@@ -535,10 +544,12 @@ mod tests {
         }
 
         // Verify that at least one node has the maximum density_sum
-        assert!(dtree
-            .tree
-            .values()
-            .any(|node| node.density_sum.unwrap() == max_density_sum));
+        assert!(
+            dtree
+                .tree
+                .values()
+                .any(|node| node.density_sum.unwrap() == max_density_sum)
+        );
     }
 
     #[test]

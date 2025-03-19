@@ -118,6 +118,7 @@ use ego_tree::NodeId;
 
 pub mod cetd;
 pub mod tree;
+pub mod unicode;
 pub mod utils;
 pub use cetd::{DensityNode, DensityTree};
 pub use utils::{get_node_links, get_node_text};

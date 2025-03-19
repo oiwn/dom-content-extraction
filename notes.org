@@ -2,8 +2,7 @@
 
 * Unicode documents handling
 ** TODO I think there are problems processing unicode.
-** TODO refactoring to make certain tags processing logic
-configurable.
+** TODO refactoring to make certain tags processing logic configurable.
 
 * Microtasks
 ** DONE Better split for CI/CD workflows
@@ -12,7 +11,7 @@ configurable.
 *** DONE forbid unwrap in linting rules
 ** DONE coverage should be >80%
 ** DONE integrate cargo-tarpaulin or gcov into the github ci pipeline
-** TODO cargo publish workflow
+** DONE cargo publish workflow
 ** DONE add clear copy-pastable example into readme.md
 ** DONE need "examples" command for "lorem ipsum" test page
 ** DONE need "benchmark"

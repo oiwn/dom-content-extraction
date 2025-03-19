@@ -39,21 +39,23 @@ pub fn get_node_by_id(
 ///
 /// * Result with `String` containing the concatenated text from all
 ///   descendant nodes of the specified node, or `DomExtractionError`
+// Replace the existing get_node_text function with this updated version:
 pub fn get_node_text(
     node_id: NodeId,
     document: &Html,
 ) -> Result<String, DomExtractionError> {
-    let mut text: Vec<String> = vec![];
+    let mut text_fragments: Vec<String> = vec![];
     let root_node = get_node_by_id(node_id, document)?;
     for node in root_node.descendants() {
         if let Some(txt) = node.value().as_text() {
             let clean_text = txt.trim();
             if !clean_text.is_empty() {
-                text.push(clean_text.to_string());
+                text_fragments.push(clean_text.to_string());
             };
         };
     }
-    Ok(text.join(" "))
+    // Use the Unicode join function instead of simple join
+    Ok(crate::unicode::join_text_fragments(text_fragments))
 }
 
 /// Helper function to extract all links (`href` attributes) from a `scraper::Html`
