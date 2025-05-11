@@ -2,7 +2,7 @@
 
 * Unicode documents handling
 ** TODO I think there are problems processing unicode.
-** TODO refactoring to make certain tags processing logic configurable.
+** DONE refactoring to make certain tags processing logic configurable.
 
 * Microtasks
 ** DONE Better split for CI/CD workflows

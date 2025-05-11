@@ -11,12 +11,12 @@ windows:
     start-directory: ./
     panes:
       - shell_command:
-        - exa
+        - eza
   - window_name: srv
     start-directory: ./
     panes:
       - shell_command:
-        - exa --long
+        - eza --long
   - window_name: notes
     panes:
       - shell_command:

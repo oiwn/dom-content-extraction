@@ -8,6 +8,6 @@
 /tmp
 /data
 *.profraw
-all_code.txt
+dom_content_extracton.txt
 .code
 .amc.toml
