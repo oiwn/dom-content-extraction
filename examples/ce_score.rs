@@ -30,8 +30,11 @@ fn clean_and_normalize_text(text: &str) -> String {
 }
 
 fn extract_content_from_html(file_path: &Path) -> Result<String> {
-    let content = fs::read_to_string(file_path)
+    // let content = fs::read_to_string(file_path)
+    //     .with_context(|| format!("Failed to read file: {:?}", file_path))?;
+    let content = fs::read(file_path)
         .with_context(|| format!("Failed to read file: {:?}", file_path))?;
+    let content = String::from_utf8_lossy(&content).into_owned();
 
     let document = Html::parse_document(&content);
     let mut dtree = DensityTree::from_document(&document).unwrap();
@@ -42,8 +45,11 @@ fn extract_content_from_html(file_path: &Path) -> Result<String> {
 }
 
 fn clean_txt_file(file_path: &Path) -> Result<String> {
-    let content = fs::read_to_string(file_path)
+    // let content = fs::read_to_string(file_path)
+    //     .with_context(|| format!("Failed to read file: {:?}", file_path))?;
+    let content = fs::read(file_path)
         .with_context(|| format!("Failed to read file: {:?}", file_path))?;
+    let content = String::from_utf8_lossy(&content).into_owned();
 
     // Remove URL line from the top
     let content = content.lines().skip(1).collect::<Vec<&str>>().join("\n");
@@ -64,6 +70,48 @@ fn clean_txt_file(file_path: &Path) -> Result<String> {
 }
 
 fn calculate_lcs(s1: &str, s2: &str) -> usize {
+    // Split into words instead of characters
+    let s1: Vec<&str> = s1.split_whitespace().collect();
+    let s2: Vec<&str> = s2.split_whitespace().collect();
+    let (m, n) = (s1.len(), s2.len());
+    let mut prev = vec![0; n + 1];
+    let mut curr = vec![0; n + 1];
+
+    for i in 1..=m {
+        for j in 1..=n {
+            if s1[i - 1] == s2[j - 1] {
+                curr[j] = prev[j - 1] + 1;
+            } else {
+                curr[j] = curr[j - 1].max(prev[j]);
+            }
+        }
+        std::mem::swap(&mut prev, &mut curr);
+    }
+
+    // Convert word count to approximate character count
+    let lcs_words = prev[n];
+    if lcs_words == 0 {
+        return 0;
+    }
+
+    // Calculate average word length in both strings
+    let avg_word_len1 = if s1.is_empty() {
+        0.0
+    } else {
+        s1.iter().map(|w| w.len()).sum::<usize>() as f64 / s1.len() as f64
+    };
+    let avg_word_len2 = if s2.is_empty() {
+        0.0
+    } else {
+        s2.iter().map(|w| w.len()).sum::<usize>() as f64 / s2.len() as f64
+    };
+    let avg_word_len = (avg_word_len1 + avg_word_len2) / 2.0;
+
+    // Convert to character count (add 1 for space between words)
+    (lcs_words as f64 * (avg_word_len + 1.0)) as usize
+}
+
+/* fn calculate_lcs(s1: &str, s2: &str) -> usize {
     let s1: Vec<char> = s1.chars().collect();
     let s2: Vec<char> = s2.chars().collect();
     let (m, n) = (s1.len(), s2.len());
@@ -82,7 +130,7 @@ fn calculate_lcs(s1: &str, s2: &str) -> usize {
     }
 
     prev[n]
-}
+} */
 
 fn process_file_pair(
     txt_path: &Path,

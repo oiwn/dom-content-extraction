@@ -18,7 +18,9 @@ via Text Density (CETD) algorithm described in the paper by
 
 ## What Problem Does This Solve?
 
-Web pages often contain a lot of peripheral content like navigation menus, advertisements, footers, and sidebars. This makes it challenging to extract just the main content programmatically. This library helps solve this problem by:
+Web pages often contain a lot of peripheral content like navigation menus,
+advertisements, footers, and sidebars. This makes it challenging to extract just
+the main content programmatically. This library helps solve this problem by:
 
 - Analyzing the text density patterns in HTML documents
 - Identifying content-rich sections versus navigational/peripheral elements
@@ -53,7 +55,7 @@ This ensures accurate content extraction from web pages in any language, with pr
 
 ## Usage
 
-Due to "LazyLock" MSRV is 1.80
+MSRV is 1.85 due to 2024 edition. Living on the edge!
 
 Basic usage example:
 
