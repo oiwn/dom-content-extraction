@@ -280,7 +280,7 @@ impl<'a> DensityTree {
     ///     println!("Max density sum: {:?}", max_node.value().density_sum);
     /// }
     /// ```
-    pub fn get_max_density_sum_node(&self) -> Option<NodeRef<DensityNode>> {
+    pub fn get_max_density_sum_node(&self) -> Option<NodeRef<'_, DensityNode>> {
         self.tree.nodes().max_by(|a, b| {
             a.value()
                 .density_sum
