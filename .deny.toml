@@ -7,4 +7,3 @@ allow = [
     "ISC",
     "BSD-3-Clause"
 ]
-exceptions = ["fxhash"]
