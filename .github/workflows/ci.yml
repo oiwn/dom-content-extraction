@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: EmbarkStudios/cargo-deny-action@v2
-  
+
   # Run cargo clippy.
   lint-clippy:
     name: Check Clippy
@@ -68,7 +68,7 @@ jobs:
           globs: |
             '**/*.md'
             '!target'
-           
+
    # Run cargo check. This is a fast way to catch any obvious errors in the code.
   check:
     name: Check ${{ matrix.os }} ${{ matrix.toolchain }}
@@ -76,7 +76,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        toolchain: ["1.85", "stable"]
+        toolchain: ["1.89", "stable"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

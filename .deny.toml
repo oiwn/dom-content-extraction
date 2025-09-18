@@ -4,5 +4,11 @@ allow = [
     "MIT",
     "Unicode-3.0",
     "MPL-2.0",
-    "ISC"
+    "ISC",
+    "BSD-3-Clause"
+]
+
+[advisories]
+ignore = [
+    "RUSTSEC-2025-0057"
 ]

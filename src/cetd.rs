@@ -221,13 +221,12 @@ impl<'a> DensityTree {
         }
 
         // Handle link char count for text within links
-        if let Some(parent) = node.parent() {
-            if let Some(element) = parent.value().as_element() {
-                if element.name() == "a" {
-                    density_node.value().metrics.link_char_count +=
-                        density_node.value().metrics.char_count;
-                }
-            }
+        if let Some(parent) = node.parent()
+            && let Some(element) = parent.value().as_element()
+            && element.name() == "a"
+        {
+            density_node.value().metrics.link_char_count +=
+                density_node.value().metrics.char_count;
         }
 
         // Update parent metrics by combining current node's metrics
@@ -280,7 +279,7 @@ impl<'a> DensityTree {
     ///     println!("Max density sum: {:?}", max_node.value().density_sum);
     /// }
     /// ```
-    pub fn get_max_density_sum_node(&self) -> Option<NodeRef<DensityNode>> {
+    pub fn get_max_density_sum_node(&self) -> Option<NodeRef<'_, DensityNode>> {
         self.tree.nodes().max_by(|a, b| {
             a.value()
                 .density_sum

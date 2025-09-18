@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use dom_content_extraction::{
-    get_content, get_node_text, scraper::Html, DensityTree,
+    DensityTree, get_content, get_node_text, scraper::Html,
 };
 use std::fs;
 

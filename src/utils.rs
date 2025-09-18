@@ -78,10 +78,10 @@ pub fn get_node_links(
     let mut links: Vec<String> = vec![];
     let root_node = get_node_by_id(node_id, document)?;
     for node in root_node.descendants() {
-        if let Some(elem) = node.value().as_element() {
-            if let Some(link) = elem.attr("href") {
-                links.push(link.trim().to_string());
-            };
+        if let Some(elem) = node.value().as_element()
+            && let Some(link) = elem.attr("href")
+        {
+            links.push(link.trim().to_string());
         };
     }
     Ok(links)
