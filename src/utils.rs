@@ -46,16 +46,36 @@ pub fn get_node_text(
 ) -> Result<String, DomExtractionError> {
     let mut text_fragments: Vec<String> = vec![];
     let root_node = get_node_by_id(node_id, document)?;
-    for node in root_node.descendants() {
-        if let Some(txt) = node.value().as_text() {
+    collect_text_filtered(&root_node, &mut text_fragments);
+    // Use the Unicode join function instead of simple join
+    Ok(crate::unicode::join_text_fragments(text_fragments))
+}
+
+/// Recursively collect text from nodes while filtering out script/style content
+fn collect_text_filtered(node: &ego_tree::NodeRef<'_, scraper::node::Node>, text_fragments: &mut Vec<String>) {
+    match node.value() {
+        scraper::Node::Text(txt) => {
             let clean_text = txt.trim();
             if !clean_text.is_empty() {
                 text_fragments.push(clean_text.to_string());
-            };
-        };
+            }
+        }
+        scraper::Node::Element(elem) => {
+            // Skip script, noscript, and style elements entirely
+            if !matches!(elem.name(), "script" | "noscript" | "style") {
+                // Process children only if this isn't a filtered element
+                for child in node.children() {
+                    collect_text_filtered(&child, text_fragments);
+                }
+            }
+        }
+        _ => {
+            // For other node types, process children
+            for child in node.children() {
+                collect_text_filtered(&child, text_fragments);
+            }
+        }
     }
-    // Use the Unicode join function instead of simple join
-    Ok(crate::unicode::join_text_fragments(text_fragments))
 }
 
 /// Helper function to extract all links (`href` attributes) from a `scraper::Html`
