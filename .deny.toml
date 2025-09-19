@@ -5,7 +5,8 @@ allow = [
     "Unicode-3.0",
     "MPL-2.0",
     "ISC",
-    "BSD-3-Clause"
+    "BSD-3-Clause",
+    "Zlib"
 ]
 
 [advisories]
