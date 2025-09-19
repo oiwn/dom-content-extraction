@@ -52,7 +52,10 @@ pub fn get_node_text(
 }
 
 /// Recursively collect text from nodes while filtering out script/style content
-fn collect_text_filtered(node: &ego_tree::NodeRef<'_, scraper::node::Node>, text_fragments: &mut Vec<String>) {
+fn collect_text_filtered(
+    node: &ego_tree::NodeRef<'_, scraper::node::Node>,
+    text_fragments: &mut Vec<String>,
+) {
     match node.value() {
         scraper::Node::Text(txt) => {
             let clean_text = txt.trim();

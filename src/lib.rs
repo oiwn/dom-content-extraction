@@ -120,8 +120,14 @@ pub mod cetd;
 pub mod tree;
 pub mod unicode;
 pub mod utils;
+
+#[cfg(feature = "markdown")]
+pub mod markdown;
 pub use cetd::{DensityNode, DensityTree};
 pub use utils::{get_node_links, get_node_text};
+
+#[cfg(feature = "markdown")]
+pub use markdown::extract_content_as_markdown;
 
 // Re-export
 pub use scraper;

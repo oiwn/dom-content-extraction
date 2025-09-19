@@ -80,3 +80,45 @@ cargo run --bin dce -- --file input.html --output out.txt # Extract from file
 
 - Default features include CLI functionality (`cli` feature)
 - Library can be used without CLI dependencies by disabling default features
+- Optional `markdown` feature for structured markdown extraction using density analysis
+
+## Current Task: Markdown Extraction Implementation
+
+**Goal**: Add markdown extraction capability that leverages CETD density analysis to extract main content as structured markdown.
+
+**Approach**:
+- Create completely separate `src/markdown.rs` module (do not modify CETD algorithm)
+- Use existing density analysis to identify high-density content nodes
+- Extract HTML subtrees for those nodes using their NodeIDs
+- Convert HTML to markdown using `htmd` library
+- Add as optional `markdown` feature flag
+
+**Implementation Steps**:
+1. ✅ Add `htmd` dependency with `markdown` feature flag to Cargo.toml
+2. ✅ Create `src/markdown.rs` with main API: `extract_content_as_markdown()`
+3. ✅ Add markdown module to `src/lib.rs` with feature gating
+4. ✅ Mirror logic from `DensityTree::extract_content()` but collect NodeIDs instead of text
+5. ✅ Implement HTML container extraction using scraper's NodeID→HTML mapping
+6. ✅ Integrate `htmd` for HTML→Markdown conversion
+7. ✅ Add error handling and basic tests
+
+**Current Status**: ✅ Implementation complete and working
+
+**Resolution**:
+- Simplified approach: Use `get_max_density_sum_node()` to find highest density content
+- Handle text nodes by walking up the tree to find parent elements
+- Extract HTML using `ElementRef::inner_html()` method
+- Convert to markdown using `htmd::HtmlToMarkdown` with script/style tags skipped
+- Proper error handling following existing patterns
+
+**Key Implementation Details**:
+- Uses `ElementRef::wrap()` to convert scraper nodes to elements
+- Walks up parent tree when max density node is text (whitespace)
+- Returns empty string when no content found (consistent with existing behavior)
+- Trims markdown output for clean results
+
+**Test Results**:
+- ✅ Test `test_extract_content_as_markdown` passes
+- ✅ All existing tests continue to pass
+- ✅ Generated markdown includes proper formatting (headers, paragraphs)
+- ✅ Works with both markdown feature enabled and disabled
