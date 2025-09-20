@@ -21,6 +21,10 @@ struct Cli {
     /// Output file (stdout if not specified)
     #[arg(short, long)]
     output: Option<PathBuf>,
+
+    /// Output format (text or markdown)
+    #[arg(long, default_value = "text", value_parser = ["text", "markdown"])]
+    format: String,
 }
 
 fn parse_url(s: &str) -> Result<Url, String> {
@@ -40,9 +44,36 @@ fn fetch_url(url: &Url) -> Result<String> {
         .and_then(|r| r.text())?)
 }
 
-fn process_html(html: &str) -> Result<String> {
+fn process_html(html: &str, format: &str) -> Result<String> {
     let document = Html::parse_document(html);
-    get_content(&document).context("Failed to extract content")
+
+    match format {
+        "text" => get_content(&document).context("Failed to extract content"),
+        "markdown" => {
+            #[cfg(not(feature = "markdown"))]
+            {
+                anyhow::bail!(
+                    "Markdown output requires the 'markdown' feature to be enabled"
+                );
+            }
+
+            #[cfg(feature = "markdown")]
+            {
+                use dom_content_extraction::{
+                    DensityTree, extract_content_as_markdown,
+                };
+                let mut dtree = DensityTree::from_document(&document)
+                    .context("Failed to create density tree")?;
+                dtree
+                    .calculate_density_sum()
+                    .context("Failed to calculate density sums")?;
+                extract_content_as_markdown(&dtree, &document)
+                    .map_err(|e| anyhow::anyhow!(e))
+                    .context("Failed to extract content as markdown")
+            }
+        }
+        _ => anyhow::bail!("Invalid format: {}. Use 'text' or 'markdown'", format),
+    }
 }
 
 fn write_output(content: &str, output_path: Option<PathBuf>) -> Result<()> {
@@ -81,7 +112,7 @@ fn main() -> Result<()> {
     };
 
     // Process HTML and extract content
-    let extracted_content = process_html(&html_content)?;
+    let extracted_content = process_html(&html_content, &cli.format)?;
 
     // Write output
     write_output(&extracted_content, cli.output)?;

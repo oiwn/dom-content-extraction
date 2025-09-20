@@ -1,0 +1,2 @@
+[llvm-cov]
+ignore-filename-regex = ["src/main.rs"]

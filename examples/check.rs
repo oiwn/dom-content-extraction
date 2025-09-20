@@ -1,4 +1,6 @@
 use clap::{Parser, Subcommand};
+#[cfg(feature = "markdown")]
+use dom_content_extraction::extract_content_as_markdown;
 use dom_content_extraction::{
     DensityTree, get_content, get_node_text, scraper::Html,
 };
@@ -16,6 +18,8 @@ enum Commands {
     LoremIpsum,
     Test4,
     TestToy,
+    #[cfg(feature = "markdown")]
+    LoremIpsumMarkdown,
 }
 
 fn main() {
@@ -30,6 +34,10 @@ fn main() {
         }
         Commands::TestToy => {
             process_toy();
+        }
+        #[cfg(feature = "markdown")]
+        Commands::LoremIpsumMarkdown => {
+            process_lorem_ipsum_markdown();
         }
     }
 }
@@ -79,4 +87,17 @@ fn process_toy() {
     let document = Html::parse_document(html);
     let content = get_content(&document).unwrap();
     println!("{}", content);
+}
+
+#[cfg(feature = "markdown")]
+fn process_lorem_ipsum_markdown() {
+    println!("Processing Lorem Ipsum example as Markdown...");
+    let html_content =
+        fs::read_to_string("html/lorem_ipsum.html").expect("Unable to read file");
+    let document = Html::parse_document(&html_content);
+    let mut dtree = DensityTree::from_document(&document).unwrap();
+    dtree.calculate_density_sum().unwrap();
+
+    let markdown_content = extract_content_as_markdown(&dtree, &document).unwrap();
+    println!("Extracted markdown content:\n{}", markdown_content);
 }
