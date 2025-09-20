@@ -1,9 +1,9 @@
 use clap::{Parser, Subcommand};
+#[cfg(feature = "markdown")]
+use dom_content_extraction::extract_content_as_markdown;
 use dom_content_extraction::{
     DensityTree, get_content, get_node_text, scraper::Html,
 };
-#[cfg(feature = "markdown")]
-use dom_content_extraction::extract_content_as_markdown;
 use std::fs;
 
 #[derive(Parser)]
@@ -97,7 +97,7 @@ fn process_lorem_ipsum_markdown() {
     let document = Html::parse_document(&html_content);
     let mut dtree = DensityTree::from_document(&document).unwrap();
     dtree.calculate_density_sum().unwrap();
-    
+
     let markdown_content = extract_content_as_markdown(&dtree, &document).unwrap();
     println!("Extracted markdown content:\n{}", markdown_content);
 }
