@@ -82,7 +82,7 @@ cargo run --bin dce -- --file input.html --output out.txt # Extract from file
 - Library can be used without CLI dependencies by disabling default features
 - Optional `markdown` feature for structured markdown extraction using density analysis
 
-## Current Task: Markdown Extraction Implementation
+## Markdown Extraction Implementation
 
 **Goal**: Add markdown extraction capability that leverages CETD density analysis to extract main content as structured markdown.
 
