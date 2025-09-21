@@ -122,3 +122,91 @@ cargo run --bin dce -- --file input.html --output out.txt # Extract from file
 - ✅ All existing tests continue to pass
 - ✅ Generated markdown includes proper formatting (headers, paragraphs)
 - ✅ Works with both markdown feature enabled and disabled
+
+## CLI Integration Complete
+
+**Goal**: Add markdown output option to the `dce` CLI tool
+
+**Implementation**:
+- Added `--format` option to CLI with values `text` (default) and `markdown`
+- Modified `process_html()` function to handle both text and markdown formats
+- Added proper feature gating with clear error messages when markdown feature not enabled
+- Maintained backward compatibility with existing text output
+
+**CLI Usage**:
+```bash
+# Extract as text (default)
+cargo run -- --file input.html
+cargo run -- --url "https://example.com"
+
+# Extract as markdown
+cargo run -- --file input.html --format markdown
+cargo run -- --url "https://example.com" --format markdown
+
+# Output to file
+cargo run -- --file input.html --format markdown --output content.md
+```
+
+**Technical Details**:
+- Uses long option `--format` (no short option to avoid conflict with `--file -f`)
+- Proper error handling when markdown feature is not enabled
+- Clean integration with existing density analysis pipeline
+- Coverage exclusion for `src/main.rs` via `.llvm-cov` configuration
+
+**Testing**:
+- ✅ CLI builds successfully with and without markdown feature
+- ✅ Help output shows new `--format` option
+- ✅ Error handling works correctly when markdown requested but feature disabled
+- ✅ Backward compatibility maintained for existing text output
+
+## Current Task: Replace reqwest with wreq for browser-like HTTP requests
+
+**Goal**: Migrate from simple reqwest HTTP client to wreq for advanced browser emulation and TLS fingerprinting capabilities
+
+### Migration Plan
+
+#### 1. Dependency Updates
+```bash
+# Remove reqwest from Cargo.toml cli features
+# Add wreq and related dependencies
+wreq = "6.0.0-rc.20"
+wreq-util = "3.0.0-rc.3"
+tokio = { version = "1", features = ["full"] }
+```
+
+#### 2. Code Changes (src/main.rs)
+- Add `#[tokio::main]` attribute to main function
+- Convert `fetch_url()` from blocking to async
+- Replace `reqwest::blocking::Client` with `wreq::Client`
+- Add browser emulation configuration using `wreq_util::Emulation`
+- Update error handling for wreq's Result type
+
+#### 3. Browser Emulation Configuration
+```rust
+use wreq::Client;
+use wreq_util::Emulation;
+
+let client = Client::builder()
+    .emulation(Emulation::Chrome120)  // Or other browser profiles
+    .build()?;
+```
+
+#### 4. Key Benefits
+- **TLS Fingerprinting**: Avoids detection as bot/scraper
+- **Browser Emulation**: Mimics real browser behavior
+- **HTTP/2 Support**: Modern protocol support
+- **Advanced Features**: Cookie store, redirect policies, rotating proxies
+
+#### 5. Testing Strategy
+- Verify URL fetching still works with various websites
+- Test TLS fingerprinting effectiveness
+- Ensure error handling is robust
+- Maintain backward compatibility with existing CLI interface
+
+#### 6. Technical Considerations
+- **Async Migration**: Move from blocking to async architecture
+- **Error Handling**: wreq uses different error types than reqwest
+- **TLS Backend**: wreq uses BoringSSL instead of system TLS
+- **Dependency Conflicts**: Avoid openssl-sys conflicts
+
+**Status**: Planning phase complete, ready for implementation

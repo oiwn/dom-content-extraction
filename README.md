@@ -30,10 +30,11 @@ the main content programmatically. This library helps solve this problem by:
 - Support for nested HTML structures
 - Efficient processing of large documents
 - Error handling for malformed HTML
+- **Markdown output** (optional feature) - Extract content as structured markdown
 
 ## Unicode Support
 
-DOM Content Extraction includes robust Unicode support for handling multilingual content:
+DOM Content Extraction includes Unicode support for handling multilingual content:
 
 - Proper character counting using Unicode grapheme clusters
 - Unicode normalization (NFC) for consistent text representation
@@ -87,8 +88,16 @@ cargo add dom-content-extraction
 
 or add to you  `Cargo.toml`
 
-```
+```toml
 dom-content-extraction = "0.3"
+```
+
+### Optional Features
+
+To enable markdown output support:
+
+```toml
+dom-content-extraction = { version = "0.3", features = ["markdown"] }
 ```
 
 ## Documentation
@@ -96,6 +105,22 @@ dom-content-extraction = "0.3"
 Read the docs! 
 
 [dom-content-extraction documentation](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)
+
+### Library Usage with Markdown
+
+```rust
+use dom_content_extraction::{DensityTree, extract_content_as_markdown, scraper::Html};
+
+let html = "<html><body><article><h1>Title</h1><p>Content</p></article></body></html>";
+let document = Html::parse_document(html);
+let mut dtree = DensityTree::from_document(&document)?;
+dtree.calculate_density_sum()?;
+
+// Extract as markdown
+let markdown = extract_content_as_markdown(&dtree, &document)?;
+println!("{}", markdown);
+# Ok::<(), dom_content_extraction::DomExtractionError>(())
+```
 
 ## Run examples
 
@@ -107,10 +132,16 @@ This one will extract content from generated "lorem ipsum" page
 cargo run --example check -- lorem-ipsum 
 ```
 
-This one print node with highest density:
+This one prints node with highest density:
 
 ```bash
-cargo run --examples check -- test4
+cargo run --example check -- test4
+```
+
+Extract content as markdown from lorem ipsum (requires markdown feature):
+
+```bash
+cargo run --example check -- lorem-ipsum-markdown
 ```
 
 There is scoring example i'm trying to implement scoring.
@@ -148,7 +179,9 @@ Overall Performance:
 
 ## Binary Usage
 
-The crate includes a command-line binary tool `dce` (DOM Content Extraction) for extracting main content from HTML documents. It supports both local files and remote URLs as input sources.
+The crate includes a command-line binary tool `dce` (DOM Content Extraction) for
+extracting main content from HTML documents. It supports both local files and
+remote URLs as input sources.
 
 ### Installation
 
@@ -167,11 +200,26 @@ Options:
   -u, --url <URL>        URL to fetch HTML content from
   -f, --file <FILE>      Local HTML file to process
   -o, --output <FILE>    Output file (stdout if not specified)
+      --format <FORMAT>  Output format [default: text] [possible values: text, markdown]
   -h, --help            Print help
   -V, --version         Print version
 ```
 
 Note: Either `--url` or `--file` must be specified, but not both.
+
+### Markdown Output
+
+To extract content as markdown format, use the `--format markdown` option:
+
+```bash
+# Extract as markdown from URL
+cargo run --bin dce -- --url "https://example.com" --format markdown
+
+# Extract as markdown from file and save to output
+cargo run --bin dce -- --file input.html --format markdown --output content.md
+```
+
+Note: Markdown output requires the `markdown` feature to be enabled.
 
 ### Features
 
@@ -180,6 +228,7 @@ Note: Either `--url` or `--file` must be specified, but not both.
 - **Error Handling**: Comprehensive error messages for common failure cases
 - **Flexible Output**: Write to file or stdout
 - **Temporary File Management**: Automatic cleanup of downloaded content
+- **Markdown Support**: Extract content as structured markdown (requires `markdown` feature)
 
 ### Examples
 
@@ -198,16 +247,6 @@ Extract from URL and save directly to file:
 dce --url "https://example.com/page" --output content.txt
 ```
 
-### Error Handling
-
-The binary provides clear error messages for common scenarios:
-
-- Invalid URLs
-- Network timeouts
-- File access issues
-- HTML parsing errors
-- Content extraction failures
-
 ### Dependencies
 
 The binary functionality requires the following additional dependencies:
@@ -217,6 +256,8 @@ The binary functionality requires the following additional dependencies:
 - `tempfile`: Temporary file management
 - `url`: URL parsing and validation
 - `anyhow`: Error handling
+- `htmd`: HTML to markdown conversion (for markdown feature)
 
-These dependencies are only included when building with the default `cli` feature.
+These dependencies are only included when building with the default `cli`
+feature. The `markdown` feature requires the `htmd` dependency.
 
