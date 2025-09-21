@@ -1,11 +1,12 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use dom_content_extraction::get_content;
-use reqwest::blocking::Client;
 use scraper::Html;
 use std::{fs, path::PathBuf};
 use tempfile::Builder;
 use url::Url;
+use wreq::Client;
+use wreq_util::Emulation;
 
 #[derive(Parser)]
 #[command(version, about = "Extract main content from HTML documents")]
@@ -31,17 +32,25 @@ fn parse_url(s: &str) -> Result<Url, String> {
     Url::parse(s).map_err(|e| format!("Invalid URL: {}", e))
 }
 
-fn fetch_url(url: &Url) -> Result<String> {
+async fn fetch_url(url: &Url) -> Result<String> {
     let client = Client::builder()
+        .emulation(Emulation::Chrome120)
         .timeout(std::time::Duration::from_secs(30))
         .build()
         .context("Failed to create HTTP client")?;
 
-    Ok(client
+    let response = client
         .get(url.as_str())
         .send()
-        .and_then(|r| r.error_for_status())
-        .and_then(|r| r.text())?)
+        .await
+        .context("Failed to send HTTP request")?;
+
+    response
+        .error_for_status()
+        .context("HTTP request failed")?
+        .text()
+        .await
+        .context("Failed to read response text")
 }
 
 fn process_html(html: &str, format: &str) -> Result<String> {
@@ -88,7 +97,8 @@ fn write_output(content: &str, output_path: Option<PathBuf>) -> Result<()> {
     }
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Get HTML content from either URL or file
@@ -100,7 +110,7 @@ fn main() -> Result<()> {
             .context("Failed to create temp directory")?;
 
         // Fetch and store content
-        let content = fetch_url(&url)?;
+        let content = fetch_url(&url).await?;
         let temp_file = temp_dir.path().join("content.html");
         fs::write(&temp_file, &content).context("Failed to write temp file")?;
 
