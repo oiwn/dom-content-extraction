@@ -6,7 +6,8 @@ allow = [
     "MPL-2.0",
     "ISC",
     "BSD-3-Clause",
-    "Zlib"
+    "Zlib",
+    "CDLA-Permissive-2.0"
 ]
 
 [advisories]
