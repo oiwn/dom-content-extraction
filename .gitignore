@@ -7,7 +7,8 @@
 
 /tmp
 /data
+interfax_cb.html
+examples/debug_interfax.rs
 *.profraw
-dom_content_extracton.txt
 .code
 .amc.toml

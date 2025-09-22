@@ -323,8 +323,13 @@ impl<'a> DensityTree {
             // Calculate the average density of ancestors
             let ancestor_densities: Vec<f32> =
                 max_node.ancestors().map(|n| n.value().density).collect();
-            let threshold = ancestor_densities.iter().sum::<f32>()
-                / ancestor_densities.len() as f32;
+            let threshold = if ancestor_densities.is_empty() {
+                // If no ancestors, use the max node's density as threshold
+                max_node.value().density
+            } else {
+                ancestor_densities.iter().sum::<f32>()
+                    / ancestor_densities.len() as f32
+            };
 
             // Find the largest contiguous block of high-density content
             let mut content_nodes: Vec<NodeRef<DensityNode>> = Vec::new();

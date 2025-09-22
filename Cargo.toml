@@ -36,16 +36,19 @@ scraper = "0.24"
 thiserror = "2"
 # binary
 clap = { version = "4.5", features = ["derive"], optional = true }
-reqwest = { version = "0.12", features = ["blocking"], optional = true }
 tempfile = { version = "3.22", optional = true }
 url = { version = "2.5", optional = true }
 anyhow = { version = "1", optional = true }
 unicode-normalization = "0.1"
 unicode-segmentation = "1.12"
 htmd = { version = "0.3", optional = true }
-wreq-util = { version = "2.2", features = ["full"] }
-wreq = { version = "5.3", features = ["full"] }
-tokio = { version = "1.47", features = ["full"] }
+wreq-util = { version = "2.2", features = ["full"], optional = true }
+wreq = { version = "5.3", features = ["full"], optional = true }
+tokio = { version = "1.47", features = ["full"], optional = true }
+encoding_rs = { version = "0.8", optional = true }
+tracing-subscriber = { version = "0.3.20", features = ["env-filter"], optional = true }
+tracing = { version = "0.1.41", optional = true }
+chardetng = { version = "0.1.17", optional = true }
 
 [dev-dependencies]
 criterion = "0.7"
@@ -71,8 +74,14 @@ default = ["cli", "markdown"]
 markdown = ["dep:htmd"]
 cli = [
     "dep:clap",
-    "dep:reqwest",
+    "dep:wreq",
+    "dep:wreq-util",
+    "dep:tokio",
     "dep:tempfile",
     "dep:url",
-    "dep:anyhow"
+    "dep:anyhow",
+    "dep:encoding_rs",
+    "dep:tracing",
+    "dep:tracing-subscriber",
+    "dep:chardetng"
 ]
