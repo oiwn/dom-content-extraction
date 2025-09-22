@@ -5,7 +5,7 @@ fn test_non_utf8_file_fails_with_current_implementation() {
     // This test demonstrates the current limitation:
     // Windows-1251 encoded files fail to be read
     let result = fs::read_to_string("html/test_windows1251.html");
-    
+
     // This should fail with "stream did not contain valid UTF-8"
     assert!(result.is_err());
     let error = result.unwrap_err();

@@ -23,10 +23,10 @@ fn detect_and_convert_to_utf8(
     let mut detector = chardetng::EncodingDetector::new();
     detector.feed(bytes, true);
     let encoding = detector.guess(None, true);
-    
+
     // Decode using the detected encoding
     let (cow, _, had_errors) = encoding.decode(bytes);
-    
+
     if had_errors && encoding != encoding_rs::UTF_8 {
         // Fallback to UTF-8 if the detected encoding fails
         let (cow, _, _) = encoding_rs::UTF_8.decode(bytes);
@@ -172,7 +172,8 @@ async fn main() -> Result<()> {
     } else if let Some(file) = cli.file {
         info!("Processing file input: {:?}", file);
         let bytes = fs::read(file).context("Failed to read input file")?;
-        detect_and_convert_to_utf8(&bytes).context("Failed to convert file to UTF-8")?
+        detect_and_convert_to_utf8(&bytes)
+            .context("Failed to convert file to UTF-8")?
     } else {
         anyhow::bail!("Either --url or --file must be specified");
     };

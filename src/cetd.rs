@@ -327,7 +327,8 @@ impl<'a> DensityTree {
                 // If no ancestors, use the max node's density as threshold
                 max_node.value().density
             } else {
-                ancestor_densities.iter().sum::<f32>() / ancestor_densities.len() as f32
+                ancestor_densities.iter().sum::<f32>()
+                    / ancestor_densities.len() as f32
             };
 
             // Find the largest contiguous block of high-density content
