@@ -8,6 +8,7 @@
 /tmp
 /data
 interfax_cb.html
+examples/debug_interfax.rs
 *.profraw
 .code
 .amc.toml

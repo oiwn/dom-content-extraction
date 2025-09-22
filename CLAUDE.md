@@ -1,212 +1,114 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Project guidance for Claude Code when working with this repository.
 
 ## Project Overview
 
-This is a Rust library implementing the Content Extraction via Text Density (CETD) algorithm for extracting main content from web pages. The core concept analyzes text density patterns to distinguish content-rich sections from navigational elements.
+Rust library implementing Content Extraction via Text Density (CETD) algorithm for extracting main content from web pages by analyzing text density patterns.
+
+## Recent Progress
+
+### ✅ Completed Features
+- **Markdown Extraction**: Structured markdown output using CETD density analysis
+- **HTTP Client**: Migrated to wreq for browser emulation and TLS fingerprinting  
+- **Encoding Support**: Full non-UTF-8 encoding support using chardetng
+
+### 🔧 Current Status
+- **CLI Tool**: Fully functional with URL/file input, text/markdown output
+- **Library API**: Stable with comprehensive feature set
+- **Testing**: Comprehensive test suite
 
 ## Architecture
 
 ### Core Components
-
-- **`DensityTree`** (`src/cetd.rs`): Main structure representing text density analysis of HTML documents. Contains methods for building density trees, calculating metrics, and extracting content.
-- **`DensityNode`** (`src/cetd.rs`): Individual nodes containing text density metrics (character count, tag count, link density).
-- **Tree operations** (`src/tree.rs`): HTML document traversal and node metrics calculation.
-- **Unicode handling** (`src/unicode.rs`): Proper character counting using grapheme clusters and Unicode normalization.
-- **Utilities** (`src/utils.rs`): Helper functions for text extraction and link analysis.
+- **`DensityTree`** (`src/cetd.rs`): Main structure for text density analysis
+- **`DensityNode`** (`src/cetd.rs`): Individual nodes with text density metrics
+- **Tree operations** (`src/tree.rs`): HTML traversal and metrics calculation
+- **Unicode handling** (`src/unicode.rs`): Proper character counting
+- **Utilities** (`src/utils.rs`): Text extraction and link analysis
 
 ### Algorithm Flow
-
-1. Parse HTML document using `scraper::Html`
-2. Build density tree mirroring HTML structure (`DensityTree::from_document`)
-3. Calculate text density metrics for each node
-4. Compute composite density scores (`calculate_density_sum`)
+1. Parse HTML with `scraper::Html`
+2. Build density tree mirroring HTML structure
+3. Calculate text density metrics per node
+4. Compute composite density scores
 5. Extract high-density regions as main content
 
 ### Binary Tool
-
-The `dce` binary (`src/main.rs`) provides CLI access to the library functionality, supporting both local files and URL fetching.
+`dce` CLI provides file/URL input with text/markdown output options.
 
 ## Development Commands
 
-### Build and Test
 ```bash
+# Build and test
 cargo build              # Build library
-cargo build --release    # Optimized build
+cargo build --release    # Optimized build  
 cargo test               # Run tests
 cargo bench              # Run benchmarks
-```
 
-### Code Quality
-```bash
-cargo fmt                # Format code (max_width = 84, see rustfmt.toml)
+# Code quality
+cargo fmt                # Format code
 cargo clippy             # Lint code
-cargo tarpaulin          # Generate coverage report (target: 80%+, see .tarpaulin.toml)
-just coverage            # Alternative coverage command (requires just)
-```
+cargo tarpaulin          # Coverage report
 
-### Examples
-```bash
-cargo run --example check -- lorem-ipsum    # Extract from generated lorem ipsum
-cargo run --example check -- test4          # Show highest density node
-cargo run --example ce_score                # Benchmark against CleanEval dataset
-```
+# Examples
+cargo run --example check -- lorem-ipsum    # Test extraction
+cargo run --example check -- test4          # Show density nodes
 
-### Binary Usage
-```bash
-cargo run --bin dce -- --url "https://example.com"        # Extract from URL
-cargo run --bin dce -- --file input.html --output out.txt # Extract from file
+# CLI usage
+cargo run -- --url "https://example.com"        # Extract from URL
+cargo run -- --file input.html --output out.txt # Extract from file
+cargo run -- --file input.html --format markdown # Markdown output
 ```
 
 ## Project Structure
-
-- `src/lib.rs` - Main library interface and public API
-- `src/cetd.rs` - Core CETD algorithm implementation
-- `src/tree.rs` - HTML tree traversal and metrics
-- `src/unicode.rs` - Unicode-aware text processing
-- `src/utils.rs` - Text extraction utilities
-- `src/main.rs` - CLI binary implementation
-- `examples/` - Usage examples and benchmarking tools
+- `src/lib.rs` - Library interface and API
+- `src/cetd.rs` - Core CETD algorithm
+- `src/tree.rs` - HTML traversal
+- `src/unicode.rs` - Unicode handling
+- `src/utils.rs` - Text utilities
+- `src/main.rs` - CLI implementation
+- `examples/` - Usage examples
 
 ## Key Dependencies
-
-- `scraper` - HTML parsing and CSS selector support
-- `ego-tree` - Tree data structure for density calculations
-- `unicode-segmentation` - Proper Unicode grapheme handling
-- `unicode-normalization` - Text normalization for consistent processing
+- `scraper` - HTML parsing
+- `ego-tree` - Tree structure
+- `unicode-segmentation` - Unicode handling
+- `chardetng` - Encoding detection
 
 ## Features
 
-- Default features include CLI functionality (`cli` feature)
-- Library can be used without CLI dependencies by disabling default features
-- Optional `markdown` feature for structured markdown extraction using density analysis
+### Available Features
+- **`cli`** (default): Command-line interface with URL fetching
+- **`markdown`** (default): HTML to markdown conversion
 
-## Markdown Extraction Implementation
-
-**Goal**: Add markdown extraction capability that leverages CETD density analysis to extract main content as structured markdown.
-
-**Approach**:
-- Create completely separate `src/markdown.rs` module (do not modify CETD algorithm)
-- Use existing density analysis to identify high-density content nodes
-- Extract HTML subtrees for those nodes using their NodeIDs
-- Convert HTML to markdown using `htmd` library
-- Add as optional `markdown` feature flag
-
-**Implementation Steps**:
-1. ✅ Add `htmd` dependency with `markdown` feature flag to Cargo.toml
-2. ✅ Create `src/markdown.rs` with main API: `extract_content_as_markdown()`
-3. ✅ Add markdown module to `src/lib.rs` with feature gating
-4. ✅ Mirror logic from `DensityTree::extract_content()` but collect NodeIDs instead of text
-5. ✅ Implement HTML container extraction using scraper's NodeID→HTML mapping
-6. ✅ Integrate `htmd` for HTML→Markdown conversion
-7. ✅ Add error handling and basic tests
-
-**Current Status**: ✅ Implementation complete and working
-
-**Resolution**:
-- Simplified approach: Use `get_max_density_sum_node()` to find highest density content
-- Handle text nodes by walking up the tree to find parent elements
-- Extract HTML using `ElementRef::inner_html()` method
-- Convert to markdown using `htmd::HtmlToMarkdown` with script/style tags skipped
-- Proper error handling following existing patterns
-
-**Key Implementation Details**:
-- Uses `ElementRef::wrap()` to convert scraper nodes to elements
-- Walks up parent tree when max density node is text (whitespace)
-- Returns empty string when no content found (consistent with existing behavior)
-- Trims markdown output for clean results
-
-**Test Results**:
-- ✅ Test `test_extract_content_as_markdown` passes
-- ✅ All existing tests continue to pass
-- ✅ Generated markdown includes proper formatting (headers, paragraphs)
-- ✅ Works with both markdown feature enabled and disabled
-
-## CLI Integration Complete
-
-**Goal**: Add markdown output option to the `dce` CLI tool
-
-**Implementation**:
-- Added `--format` option to CLI with values `text` (default) and `markdown`
-- Modified `process_html()` function to handle both text and markdown formats
-- Added proper feature gating with clear error messages when markdown feature not enabled
-- Maintained backward compatibility with existing text output
-
-**CLI Usage**:
+### Feature Usage
 ```bash
-# Extract as text (default)
-cargo run -- --file input.html
-cargo run -- --url "https://example.com"
-
-# Extract as markdown
-cargo run -- --file input.html --format markdown
-cargo run -- --url "https://example.com" --format markdown
-
-# Output to file
-cargo run -- --file input.html --format markdown --output content.md
+cargo build --no-default-features              # Library only
+cargo build --no-default-features --features cli # CLI only
+cargo build --no-default-features --features markdown # Markdown only
+cargo build                                    # Default (cli + markdown)
 ```
 
-**Technical Details**:
-- Uses long option `--format` (no short option to avoid conflict with `--file -f`)
-- Proper error handling when markdown feature is not enabled
-- Clean integration with existing density analysis pipeline
-- Coverage exclusion for `src/main.rs` via `.llvm-cov` configuration
+## Markdown Extraction
+- Extracts high-density content as structured markdown
+- Uses `htmd` for HTML to markdown conversion
+- Feature-gated behind `markdown` flag
 
-**Testing**:
-- ✅ CLI builds successfully with and without markdown feature
-- ✅ Help output shows new `--format` option
-- ✅ Error handling works correctly when markdown requested but feature disabled
-- ✅ Backward compatibility maintained for existing text output
+## CLI Tool
+- `--format text` (default): Plain text extraction
+- `--format markdown`: Structured markdown output
+- Supports file/URL input with proper error handling
 
-## Current Task: Replace reqwest with wreq for browser-like HTTP requests
+## HTTP Client Migration (Completed ✅)
+**Migrated to wreq for browser emulation and TLS fingerprinting:**
+- Async runtime with `tokio`
+- Chrome 120 browser emulation
+- TLS fingerprinting avoidance
+- HTTP/2 support with advanced features
 
-**Goal**: Migrate from simple reqwest HTTP client to wreq for advanced browser emulation and TLS fingerprinting capabilities
-
-### Migration Plan
-
-#### 1. Dependency Updates
-```bash
-# Remove reqwest from Cargo.toml cli features
-# Add wreq and related dependencies
-wreq = "6.0.0-rc.20"
-wreq-util = "3.0.0-rc.3"
-tokio = { version = "1", features = ["full"] }
-```
-
-#### 2. Code Changes (src/main.rs)
-- Add `#[tokio::main]` attribute to main function
-- Convert `fetch_url()` from blocking to async
-- Replace `reqwest::blocking::Client` with `wreq::Client`
-- Add browser emulation configuration using `wreq_util::Emulation`
-- Update error handling for wreq's Result type
-
-#### 3. Browser Emulation Configuration
-```rust
-use wreq::Client;
-use wreq_util::Emulation;
-
-let client = Client::builder()
-    .emulation(Emulation::Chrome120)  // Or other browser profiles
-    .build()?;
-```
-
-#### 4. Key Benefits
-- **TLS Fingerprinting**: Avoids detection as bot/scraper
-- **Browser Emulation**: Mimics real browser behavior
-- **HTTP/2 Support**: Modern protocol support
-- **Advanced Features**: Cookie store, redirect policies, rotating proxies
-
-#### 5. Testing Strategy
-- Verify URL fetching still works with various websites
-- Test TLS fingerprinting effectiveness
-- Ensure error handling is robust
-- Maintain backward compatibility with existing CLI interface
-
-#### 6. Technical Considerations
-- **Async Migration**: Move from blocking to async architecture
-- **Error Handling**: wreq uses different error types than reqwest
-- **TLS Backend**: wreq uses BoringSSL instead of system TLS
-- **Dependency Conflicts**: Avoid openssl-sys conflicts
-
-**Status**: Planning phase complete, ready for implementation
+## Encoding Support (Enhanced ✅)
+**Fixed non-UTF-8 encoding handling:**
+- Replaced custom detection with `chardetng`
+- Fixed NaN threshold bug in extraction algorithm
+- Verified with Windows-1251 Russian content

@@ -1,2 +1,2 @@
-coverage:
-    cargo tarpaulin
+lines:
+  tokei
