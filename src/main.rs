@@ -20,9 +20,10 @@ fn detect_and_convert_to_utf8(
     }
 
     // Use chardetng for automatic encoding detection
-    let mut detector = chardetng::EncodingDetector::new();
+    let mut detector =
+        chardetng::EncodingDetector::new(chardetng::Iso2022JpDetection::Deny);
     detector.feed(bytes, true);
-    let encoding = detector.guess(None, true);
+    let encoding = detector.guess(None, chardetng::Utf8Detection::Allow);
 
     // Decode using the detected encoding
     let (cow, _, had_errors) = encoding.decode(bytes);

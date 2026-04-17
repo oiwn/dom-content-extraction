@@ -1,6 +1,6 @@
 [package]
 name = "dom-content-extraction"
-version = "0.3.15"
+version = "0.4.0"
 
 description = "Rust implementation of Content extraction via text density paper"
 license = "MPL-2.0"
@@ -31,31 +31,32 @@ strip = true
 panic = "abort"
 
 [dependencies]
-ego-tree = "0.10"
-scraper = "0.24"
-thiserror = "2"
+ego-tree = "0.11"
+scraper = "0.26"
+thiserror = "2.0"
 # binary
-clap = { version = "4.5", features = ["derive"], optional = true }
-tempfile = { version = "3.22", optional = true }
+clap = { version = "4.6", features = ["derive"], optional = true }
+tempfile = { version = "3.27", optional = true }
 url = { version = "2.5", optional = true }
-anyhow = { version = "1", optional = true }
+anyhow = { version = "1.0", optional = true }
 unicode-normalization = "0.1"
-unicode-segmentation = "1.12"
-htmd = { version = "0.3", optional = true }
-wreq-util = { version = "2.2", features = ["full"], optional = true }
-wreq = { version = "5.3", features = ["full"], optional = true }
-tokio = { version = "1", features = ["full"], optional = true }
+unicode-segmentation = "1.13"
+htmd = { version = "0.5", optional = true }
+wreq-util = { version = "3.0.0-rc.10", optional = true }
+wreq = { version = "6.0.0-rc.28", optional = true }
+tokio = { version = "1.52", features = ["full"], optional = true }
 encoding_rs = { version = "0.8", optional = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
 tracing = { version = "0.1", optional = true }
-chardetng = { version = "0.1", optional = true }
+chardetng = { version = "1.0", optional = true }
 
 [dev-dependencies]
-criterion = "0.7"
-zip = "5"
-anyhow = "1"
-regex = "1"
-rayon = "1"
+criterion = "0.8"
+zip = "8.5"
+anyhow = "1.0"
+regex = "1.12"
+rayon = "1.12"
+strsim = "0.11"
 
 [[bench]]
 name = "simple"

@@ -11,16 +11,16 @@ windows:
     start-directory: ./
     panes:
       - shell_command:
-        - claude
-  - window_name: cmd
+        - opencode
+  - window_name: cmd1
     start-directory: ./
     panes:
       - shell_command:
-        - eza --long
-  - window_name: notes
+        - eza --l
+  - window_name: cmd2
     panes:
       - shell_command:
-        - emacs -nw notes.org
+        - eza -l
   - window_name: files
     panes:
       - shell_command:
