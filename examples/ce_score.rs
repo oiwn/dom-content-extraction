@@ -8,6 +8,7 @@ use std::{
     path::Path,
     time::{Duration, Instant},
 };
+use strsim::sorensen_dice;
 
 fn normalize_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<&str>>().join(" ")
@@ -132,16 +133,18 @@ fn calculate_lcs(s1: &str, s2: &str) -> usize {
     prev[n]
 } */
 
-fn process_file_pair(
-    txt_path: &Path,
-    html_path: &Path,
-) -> Result<(f64, f64, f64, Duration)> {
+struct ScoringResult {
+    precision: f64,
+    recall: f64,
+    f1: f64,
+    dice: f64,
+    duration: Duration,
+}
+
+fn process_file_pair(txt_path: &Path, html_path: &Path) -> Result<ScoringResult> {
     let file_start = Instant::now();
     let clean_content = clean_txt_file(txt_path)?;
     let clean_content = clean_and_normalize_text(&clean_content);
-
-    // let extracted_content =
-    //     clean_and_normalize_text(&extract_content_from_html(html_path)?);
 
     let extracted_content = extract_content_from_html(html_path)?;
     let extracted_content = clean_and_normalize_text(&extracted_content);
@@ -149,11 +152,16 @@ fn process_file_pair(
     let lcs_length = calculate_lcs(&clean_content, &extracted_content);
     let precision = lcs_length as f64 / extracted_content.len() as f64;
     let recall = lcs_length as f64 / clean_content.len() as f64;
-    let f1_score = 2.0 * (precision * recall) / (precision + recall);
+    let f1 = 2.0 * (precision * recall) / (precision + recall);
+    let dice = sorensen_dice(&extracted_content, &clean_content);
 
-    let duration = file_start.elapsed();
-
-    Ok((precision, recall, f1_score, duration))
+    Ok(ScoringResult {
+        precision,
+        recall,
+        f1,
+        dice,
+        duration: file_start.elapsed(),
+    })
 }
 
 fn main() -> Result<()> {
@@ -174,22 +182,22 @@ fn main() -> Result<()> {
 
                 if html_path.exists() {
                     match process_file_pair(&path, &html_path) {
-                        Ok((precision, recall, f1, duration))
-                            if !precision.is_nan()
-                                && !recall.is_nan()
-                                && !f1.is_nan() =>
+                        Ok(result)
+                            if !result.precision.is_nan()
+                                && !result.recall.is_nan()
+                                && !result.f1.is_nan() =>
                         {
                             println!("File: {}", file_name);
-                            println!("  Precision: {:.2}", precision);
-                            println!("  Recall: {:.2}", recall);
-                            println!("  F1 Score: {:.2}", f1);
-                            println!("  Processing time: {:.2?}", duration);
-                            // If you want to highlight slow files:
-                            if duration > Duration::from_millis(500) {
+                            println!("  Precision: {:.2}", result.precision);
+                            println!("  Recall: {:.2}", result.recall);
+                            println!("  F1 Score: {:.2}", result.f1);
+                            println!("  Sorensen-Dice: {:.2}", result.dice);
+                            println!("  Processing time: {:.2?}", result.duration);
+                            if result.duration > Duration::from_millis(500) {
                                 println!("  ⚠️ SLOW PROCESSING");
                             }
                             println!();
-                            Some((precision, recall, f1))
+                            Some(result)
                         }
                         Ok(_) => {
                             println!(
@@ -221,20 +229,23 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let (total_precision, total_recall, total_f1): (f64, f64, f64) =
-        results.iter().fold((0.0, 0.0, 0.0), |acc, &(p, r, f)| {
-            (acc.0 + p, acc.1 + r, acc.2 + f)
+    let (total_precision, total_recall, total_f1, total_dice) =
+        results.iter().fold((0.0, 0.0, 0.0, 0.0), |acc, r| {
+            (
+                acc.0 + r.precision,
+                acc.1 + r.recall,
+                acc.2 + r.f1,
+                acc.3 + r.dice,
+            )
         });
 
-    let avg_precision = total_precision / total_results as f64;
-    let avg_recall = total_recall / total_results as f64;
-    let avg_f1 = total_f1 / total_results as f64;
-
+    let n = total_results as f64;
     println!("Overall Performance:");
     println!("  Files processed: {}", total_results);
-    println!("  Average Precision: {:.2}", avg_precision);
-    println!("  Average Recall: {:.2}", avg_recall);
-    println!("  Average F1 Score: {:.2}", avg_f1);
+    println!("  Average Precision: {:.2}", total_precision / n);
+    println!("  Average Recall: {:.2}", total_recall / n);
+    println!("  Average F1 Score: {:.2}", total_f1 / n);
+    println!("  Average Sorensen-Dice: {:.2}", total_dice / n);
 
     let total_duration = start_time.elapsed();
     println!("Total processing time: {:.2?}", total_duration);

@@ -84,8 +84,7 @@
 //!
 //! The library uses custom error types to handle various failure cases:
 //!
-//! - [`DomExtractionError::NoBodyElement`]: When the HTML document lacks a body tag
-//! - [`DomExtractionError::NodeAccessError`]: When a node cannot be accessed in the tree
+//! - [`DomExtractionError::NodeAccessError`]: When a node cannot be accessed in the tree (e.g., missing body)
 //!
 //! ## Performance Considerations
 //!

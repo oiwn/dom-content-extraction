@@ -2,7 +2,7 @@ use ego_tree::NodeId;
 use scraper::{Html, Selector};
 use std::sync::LazyLock;
 
-/// Selector for <body> tag
+/// Selector for `<body>` tag
 pub static BODY_SELECTOR: LazyLock<Selector> = LazyLock::new(|| {
     Selector::parse("body").expect("Can't be (parsing body selector)")
 });
