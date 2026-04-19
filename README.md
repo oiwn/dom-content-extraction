@@ -16,6 +16,8 @@ density analysis. This is an implementation of the Content Extraction
 via Text Density (CETD) algorithm described in the paper by 
 [Fei Sun, Dandan Song and Lejian Liao: Content Extraction via Text Density](http://ofey.me/papers/cetd-sigir11.pdf).
 
+See [`specs/overview.md`](specs/overview.md) for detailed architecture and internals.
+
 ## What Problem Does This Solve?
 
 Web pages often contain a lot of peripheral content like navigation menus,
@@ -95,7 +97,7 @@ cargo add dom-content-extraction
 or add to you  `Cargo.toml`
 
 ```toml
-dom-content-extraction = "0.3"
+dom-content-extraction = "0.4"
 ```
 
 ### Optional Features
@@ -103,7 +105,7 @@ dom-content-extraction = "0.3"
 To enable markdown output support:
 
 ```toml
-dom-content-extraction = { version = "0.3", features = ["markdown"] }
+dom-content-extraction = { version = "0.4", features = ["markdown"] }
 ```
 
 ## Documentation
@@ -174,96 +176,18 @@ But overall extraction works pretty well:
 
 ```text
 Overall Performance:
-  Files processed: 370
-  Average Precision: 0.87
-  Average Recall: 0.82
-  Average F1 Score: 0.75  
+  Files processed: 653
+  Average Precision: 0.88
+  Average Recall: 0.83
+  Average F1 Score: 0.78
+  Average Sorensen-Dice: 0.79
+Total processing time: 11.32s
+Average time per file: 17.34ms
 ```
 
 [Read documentation on docs.rs](https://docs.rs/dom-content-extraction/latest/dom_content_extraction/)
 
+## CLI Tool
 
-## Binary Usage
-
-The crate includes a command-line binary tool `dce` (DOM Content Extraction) for
-extracting main content from HTML documents. It supports both local files and
-remote URLs as input sources.
-
-### Installation
-
-The binary is included by default. You can install it using cargo:
-
-```bash
-cargo install dom-content-extraction
-```
-
-### Command-Line Options
-
-```
-dce [OPTIONS]
-
-Options:
-  -u, --url <URL>        URL to fetch HTML content from
-  -f, --file <FILE>      Local HTML file to process
-  -o, --output <FILE>    Output file (stdout if not specified)
-      --format <FORMAT>  Output format [default: text] [possible values: text, markdown]
-  -h, --help            Print help
-  -V, --version         Print version
-```
-
-Note: Either `--url` or `--file` must be specified, but not both.
-
-### Markdown Output
-
-To extract content as markdown format, use the `--format markdown` option:
-
-```bash
-# Extract as markdown from URL
-cargo run --bin dce -- --url "https://example.com" --format markdown
-
-# Extract as markdown from file and save to output
-cargo run --bin dce -- --file input.html --format markdown --output content.md
-```
-
-Note: Markdown output requires the `markdown` feature to be enabled.
-
-### Features
-
-- **URL Fetching**: Automatically downloads HTML content from specified URLs
-- **Timeout Control**: 30-second timeout for URL fetching to prevent hangs
-- **Error Handling**: Comprehensive error messages for common failure cases
-- **Flexible Output**: Write to file or stdout
-- **Temporary File Management**: Automatic cleanup of downloaded content
-- **Markdown Support**: Extract content as structured markdown (requires `markdown` feature)
-
-### Examples
-
-Extract content from a URL and print to stdout:
-```bash
-dce --url "https://example.com/article"
-```
-
-Process a local HTML file and save to output file:
-```bash
-dce --file input.html --output extracted.txt
-```
-
-Extract from URL and save directly to file:
-```bash
-dce --url "https://example.com/page" --output content.txt
-```
-
-### Dependencies
-
-The binary functionality requires the following additional dependencies:
-
-- `clap`: Command-line argument parsing
-- `reqwest`: HTTP client for URL fetching
-- `tempfile`: Temporary file management
-- `url`: URL parsing and validation
-- `anyhow`: Error handling
-- `htmd`: HTML to markdown conversion (for markdown feature)
-
-These dependencies are only included when building with the default `cli`
-feature. The `markdown` feature requires the `htmd` dependency.
+For command-line usage (URL fetching, file processing, encoding detection), see [`pageinfo-rs`](https://github.com/oiwn/pageinfo-rs).
 

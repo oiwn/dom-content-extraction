@@ -16,15 +16,15 @@ fn main() {
     let sorted_nodes = dtree.sorted_nodes();
 
     for (i, node) in sorted_nodes.iter().enumerate() {
-        if let Ok(text) = get_node_text(node.node_id, &document) {
-            if !text.trim().is_empty() {
-                println!(
-                    "\nNode {} (density_sum: {:.2}):",
-                    i,
-                    node.density_sum.unwrap_or(0.0)
-                );
-                println!("Text: '{}'", text.trim());
-            }
+        if let Ok(text) = get_node_text(node.node_id, &document)
+            && !text.trim().is_empty()
+        {
+            println!(
+                "\nNode {} (density_sum: {:.2}):",
+                i,
+                node.density_sum.unwrap_or(0.0)
+            );
+            println!("Text: '{}'", text.trim());
         }
     }
 

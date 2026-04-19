@@ -5,6 +5,8 @@ Extracts main content from web pages by analyzing text density patterns in the H
 
 Based on: Sun, Song & Liao (2011) "DOM Based Content Extraction via Text Density".
 
+For command-line usage, see [`pginf`](https://github.com/oiwn/pageinfo-rs).
+
 ## Architecture
 
 ### Core Algorithm Flow
@@ -24,7 +26,6 @@ Based on: Sun, Song & Liao (2011) "DOM Based Content Extraction via Text Density
 | `src/tree.rs` | HTML tree traversal: `NodeMetrics`, `TreeBuilder` trait, `BODY_SELECTOR`, metrics aggregation |
 | `src/unicode.rs` | Unicode handling: grapheme/codepoint counting, text normalization, primary script detection |
 | `src/utils.rs` | Utilities: node text extraction, link analysis, DOM construction helpers |
-| `src/main.rs` | CLI binary (`dce`): URL/file input, text/markdown output, encoding detection via chardetng |
 | `src/markdown.rs` | HTML-to-markdown extraction (feature-gated behind `markdown`) |
 
 ### Key Types
@@ -34,11 +35,20 @@ Based on: Sun, Song & Liao (2011) "DOM Based Content Extraction via Text Density
 - **`NodeMetrics`** — Raw counts: `char_count`, `tag_count`, `link_char_count`, `link_tag_count`.
 - **`DomExtractionError`** — Error type (currently only `NodeAccessError`).
 
+### Extraction Hardening
+
+The library filters out non-content elements that would pollute extracted text or skew density scoring:
+
+- **Structural skips**: `script`, `noscript`, `style`, `svg`, `template`, `canvas` subtrees
+- **Hidden containers**: `hidden`, `aria-hidden="true"`, inline `display:none` / `visibility:hidden`
+- **Boilerplate containers**: `robots-nocontent`, `sharedaddy`, `sd-sharing`, `jetpack-likes-widget`, `jp-relatedposts`, `ads__`, `adfox`, `yatag`, `data-content="webR"`
+- **Text-fragment classifier**: detects CSS blocks and machine-like JS/config blobs using shape evidence (punctuation density, assignment/call syntax, encoded tokens) without broad keyword filtering
+
 ### Examples
 
 | File | Purpose |
 |---|---|
-| `examples/ce_score.rs` | **Evaluation tool**: scores extraction against CleanEval gold-standard dataset using LCS (Precision/Recall/F1) + Sorensen-Dice similarity |
+| `examples/ce_score.rs` | Evaluation tool: scores extraction against CleanEval dataset using LCS (Precision/Recall/F1) + Sorensen-Dice |
 | `examples/check.rs` | Quick extraction test on HTML files |
 | `examples/basic.rs` | Minimal usage example |
 | `examples/debug_density.rs` | Print density tree for inspection |
@@ -54,8 +64,7 @@ Based on: Sun, Song & Liao (2011) "DOM Based Content Extraction via Text Density
 
 ### Features
 
-- **`cli`** (default): Binary with URL fetching via `wreq`, encoding detection via `chardetng`
-- **`markdown`** (default): HTML-to-markdown output via `htmd`
+- **`markdown`**: HTML-to-markdown output via `htmd` (disabled by default)
 
 ### Key Dependencies
 
@@ -64,6 +73,10 @@ Based on: Sun, Song & Liao (2011) "DOM Based Content Extraction via Text Density
 - `thiserror` — Error type derives
 - `unicode-segmentation` + `unicode-normalization` — Text processing
 - `htmd` — HTML to markdown conversion (optional)
-- `wreq` — HTTP client with browser emulation (optional, CLI only)
-- `chardetng` — Encoding detection (optional, CLI only)
+- `chardetng` + `encoding_rs` — Encoding detection (dev-only, used in examples)
 - `strsim` — String similarity metrics (dev-only, used in evaluation)
+
+### Quality Tools
+
+- `prek` — Pre-commit hooks (`fmt`, `clippy`, `typos`, `gitleaks`)
+- `.gitleaks.toml` — Allowlist for HTML test fixtures

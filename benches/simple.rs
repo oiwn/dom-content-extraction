@@ -1,4 +1,6 @@
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use std::hint::black_box;
+
+use criterion::{Criterion, criterion_group, criterion_main};
 use std::{fs, io::Read, path};
 use zip::read::ZipArchive;
 
@@ -20,15 +22,14 @@ fn read_file_content_from_zip(zip_path: &str, file_name: &str) -> Option<String>
     let zipfile = fs::File::open(zip_path).unwrap();
     let mut archive = ZipArchive::new(zipfile).unwrap();
 
-    let result = match archive.by_name(file_name) {
+    match archive.by_name(file_name) {
         Ok(mut file) => {
             let mut content = String::new();
             file.read_to_string(&mut content).unwrap();
             Some(content.to_string())
         }
         Err(..) => None,
-    };
-    result
+    }
 }
 
 fn benchmark_test_1_html_dom_content_extraction(c: &mut Criterion) {
