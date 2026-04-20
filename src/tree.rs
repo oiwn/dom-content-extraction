@@ -46,7 +46,11 @@ impl TreeBuilder for HtmlTreeBuilder<'_> {
             scraper::Node::Text(text) => {
                 // NOTE: old method calculation
                 // metrics.char_count = text.trim().len() as u32;
-                metrics.char_count = crate::unicode::count_graphemes(text.trim());
+                let clean_text = text.trim();
+                if !crate::utils::is_non_content_text(clean_text) {
+                    metrics.char_count =
+                        crate::unicode::count_graphemes(clean_text);
+                }
             }
             scraper::Node::Element(elem) => {
                 metrics.tag_count = 1;
@@ -71,9 +75,11 @@ impl TreeBuilder for HtmlTreeBuilder<'_> {
                 node.children()
                     .filter(|child| match child.value() {
                         scraper::Node::Element(elem) => {
-                            !matches!(elem.name(), "script" | "noscript" | "style")
+                            !crate::utils::should_skip_element(elem)
                         }
-                        scraper::Node::Text(text) => !text.trim().is_empty(),
+                        scraper::Node::Text(text) => {
+                            !crate::utils::is_non_content_text(text)
+                        }
                         scraper::Node::Comment(_) | scraper::Node::Document => {
                             false
                         }

@@ -1,6 +1,7 @@
 use crate::{
     DomExtractionError, get_node_text,
     tree::{BODY_SELECTOR, NodeMetrics},
+    utils::{is_non_content_text, should_skip_element},
 };
 use ego_tree::{NodeId, NodeRef, Tree};
 use scraper::Html;
@@ -181,10 +182,7 @@ impl<'a> DensityTree {
             // Skip irrelevant nodes
             match child.value() {
                 scraper::Node::Element(elem) => {
-                    if elem.name() == "script"
-                        || elem.name() == "noscript"
-                        || elem.name() == "style"
-                    {
+                    if should_skip_element(elem) {
                         continue;
                     };
                 }
@@ -205,8 +203,11 @@ impl<'a> DensityTree {
                 // let char_count = text.trim().len() as u32;
                 // density_node.value().metrics.char_count += char_count;
                 // NOTE: adding unicode support
-                let char_count = crate::unicode::count_graphemes(text.trim());
-                density_node.value().metrics.char_count += char_count;
+                let clean_text = text.trim();
+                if !is_non_content_text(clean_text) {
+                    let char_count = crate::unicode::count_graphemes(clean_text);
+                    density_node.value().metrics.char_count += char_count;
+                }
             }
             scraper::Node::Element(elem) => {
                 density_node.value().metrics.tag_count += 1;
@@ -361,7 +362,6 @@ impl<'a> DensityTree {
                     seen_text.insert(node_text);
                 }
             }
-            // Ok(content.trim().to_string())
             Ok(crate::unicode::normalize_text(&content))
         } else {
             Ok(String::new())
@@ -592,6 +592,54 @@ mod tests {
         assert!(extracted_content.contains("Even more huge"));
 
         assert!(!extracted_content.contains("Menu"));
+    }
+
+    #[test]
+    fn test_density_tree_ignores_unwrapped_script_fragments() {
+        let html = r##"
+            <html><body>
+                <article>
+                    <p>This is the main article text with enough words to be selected by density.</p>
+                    <p>Another paragraph keeps the article content substantial and readable.</p>
+                    <span>
+                        window.yaContextCb.push(function () {
+                            Ya.adfoxCode.createAdaptive({
+                                ownerId: 173858,
+                                containerId: 'adfox_151179074300466320'
+                            });
+                            setTimeout(function() {
+                                document.querySelector("#adfox_151179074300466320").style.display = "none";
+                            }, 1000);
+                        });
+                    </span>
+                </article>
+            </body></html>
+        "##;
+        let document = build_dom(html);
+        let mut dtree = DensityTree::from_document(&document).unwrap();
+
+        dtree.calculate_density_sum().unwrap();
+        let article = document
+            .select(&scraper::Selector::parse("article").unwrap())
+            .next()
+            .unwrap();
+        let span = document
+            .select(&scraper::Selector::parse("span").unwrap())
+            .next()
+            .unwrap();
+        let article_node = dtree
+            .tree
+            .values()
+            .find(|node| node.node_id == article.id())
+            .unwrap();
+        let span_node = dtree
+            .tree
+            .values()
+            .find(|node| node.node_id == span.id())
+            .unwrap();
+
+        assert!(article_node.metrics.char_count > 0);
+        assert_eq!(span_node.metrics.char_count, 0);
     }
 
     #[test]

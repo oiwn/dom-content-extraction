@@ -95,7 +95,7 @@
 //!
 //! ## Feature Flags
 //!
-//! Currently, no optional features are provided. All functionality is included in the default build.
+//! - **`markdown`**: Enables HTML-to-markdown extraction via `htmd`. Disabled by default.
 //!
 //! ## Examples
 //!
