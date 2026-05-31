@@ -1,4 +1,5 @@
 .DS_Store
+.pginf
 /target
 /Cargo.lock
 
@@ -12,3 +13,4 @@ examples/debug_interfax.rs
 *.profraw
 .code
 .amc.toml
+
