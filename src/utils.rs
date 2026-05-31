@@ -125,7 +125,7 @@ pub(crate) fn is_non_content_text(text: &str) -> bool {
 pub(crate) fn should_skip_element(elem: &scraper::node::Element) -> bool {
     if matches!(
         elem.name(),
-        "script" | "noscript" | "style" | "svg" | "template" | "canvas"
+        "script" | "noscript" | "style" | "svg" | "template" | "canvas" | "iframe"
     ) {
         return true;
     }
@@ -440,5 +440,38 @@ mod tests {
         assert!(!text.contains("Hidden text"));
         assert!(!text.contains("Invisible text"));
         assert!(!text.contains("Share this"));
+    }
+
+    #[test]
+    fn test_get_node_text_skips_iframe_fallback_text() {
+        let document = build_dom(
+            r#"
+            <html><body><article>
+                <p>Visible text before.</p>
+                <p>
+                    <iframe loading="lazy" src="https://example.com/embed">
+                        <span data-mce-type="bookmark" style="display:inline-block;width:0px;overflow:hidden;line-height:0" class="mce_SELRES_start">﻿</span>
+                    </iframe>
+                    Text after the iframe.
+                </p>
+                <p>A third paragraph.</p>
+            </article></body></html>
+            "#,
+        );
+
+        let article = document
+            .select(&scraper::Selector::parse("article").unwrap())
+            .next()
+            .unwrap();
+        let text = get_node_text(article.id(), &document).unwrap();
+
+        assert!(text.contains("Visible text before"));
+        assert!(text.contains("Text after the iframe"));
+        assert!(text.contains("A third paragraph"));
+        assert!(!text.contains("data-mce-type"));
+        assert!(!text.contains("mce_SELRES"));
+        assert!(!text.contains("<span"));
+        assert!(!text.contains("</span"));
+        assert!(!text.contains("display:inline-block"));
     }
 }
