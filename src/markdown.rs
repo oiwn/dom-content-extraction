@@ -113,14 +113,11 @@ fn find_content_container(
         element_node = parent;
     }
 
-    // Extract HTML from the container
-    let element_ref = ElementRef::wrap(element_node)
-        .ok_or(DomExtractionError::NodeAccessError(max_node_id))?;
-
-    let html_content = element_ref.inner_html();
-    let converter = htmd::HtmlToMarkdown::builder()
-        .skip_tags(vec!["script", "style"])
-        .build();
+    // Extract HTML from the container, with non-content subtrees pruned
+    // (script payloads, SVG, data: URIs, editor artifacts) so that htmd
+    // receives only the article's real DOM.
+    let html_content = crate::utils::filtered_inner_html(&element_node);
+    let converter = htmd::HtmlToMarkdown::new();
 
     converter
         .convert(&html_content)
@@ -153,10 +150,8 @@ fn extract_single_node_content(
         }
     };
 
-    let html_content = element_ref.inner_html();
-    let converter = htmd::HtmlToMarkdown::builder()
-        .skip_tags(vec!["script", "style"])
-        .build();
+    let html_content = crate::utils::filtered_inner_html(&element_ref);
+    let converter = htmd::HtmlToMarkdown::new();
 
     converter
         .convert(&html_content)
