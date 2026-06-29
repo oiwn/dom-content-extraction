@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.3
+
+### Fixed
+
+- Markdown extraction (`extract_content_as_markdown`) no longer leaks raw HTML into the output:
+  - `data:` URI images and `srcset` placeholders are dropped from `<img>`/`<source>`/`<picture>` before htmd conversion
+  - TinyMCE editor bookmark `<span data-mce-type="...">` elements are pruned
+  - `<div class="hidden">` (Tailwind/Bootstrap utility-class wrappers) and their entity-escaped contents no longer leak through
+- `should_skip_element` now recognizes Tailwind/Bootstrap hiding utilities (`hidden`, `invisible`, `sr-only`) as `class` attribute tokens, in addition to the existing `hidden` HTML attribute, `aria-hidden`, and inline `style` checks
+
+### Added
+
+- `filtered_inner_html` helper (`src/utils.rs`, feature-gated behind `markdown`) — the markdown-path analog of `collect_text_filtered`. Prunes non-content subtrees before handing HTML to htmd so the markdown path uses the same skip rules as the text path
+- `tests/e2e_leaks.rs` — regression tests against four real-world fixtures (theblock.co, bitcoinmagazine.com, cryptoslate.com, decrypt.co) loaded from `html/pages.zip`
+- `examples/check_pages.rs` — manual inspection helper that runs text or markdown extraction over every page in `html/pages.zip`
+- Four leak-pattern fixtures added to `html/pages.zip`
+
 ## 0.4.1
 
 ### Breaking Changes

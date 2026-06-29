@@ -6,7 +6,7 @@ windows:
     start-directory: ./
     panes:
       - shell_command:
-        - helix
+        - hx
   - window_name: agents
     start-directory: ./
     panes:
@@ -20,7 +20,7 @@ windows:
   - window_name: cmd2
     panes:
       - shell_command:
-        - eza -l
+        - eza --tree
   - window_name: files
     panes:
       - shell_command:

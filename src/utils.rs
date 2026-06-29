@@ -145,6 +145,21 @@ pub(crate) fn should_skip_element(elem: &scraper::node::Element) -> bool {
         }
     }
 
+    // Tailwind/utility-class hiding: skip elements whose `class` attribute
+    // contains a token like `hidden`, `invisible`, or `sr-only` (used by
+    // Tailwind, Bootstrap, and common CSS frameworks for `display:none`,
+    // `visibility:hidden`, and visually-hidden-but-still-accessible).
+    // Token-based to avoid false positives on e.g. `class="menu-hidden-link`.
+    if let Some(class) = elem.attr("class") {
+        const HIDDEN_CLASS_TOKENS: &[&str] = &["hidden", "invisible", "sr-only"];
+        if class
+            .split_whitespace()
+            .any(|tok| HIDDEN_CLASS_TOKENS.contains(&tok))
+        {
+            return true;
+        }
+    }
+
     let class = elem.attr("class").unwrap_or("");
     let id = elem.attr("id").unwrap_or("");
     let marker_source = format!("{class} {id}").to_ascii_lowercase();
@@ -248,6 +263,130 @@ fn collect_text_filtered(
             for child in node.children() {
                 collect_text_filtered(&child, text_fragments);
             }
+        }
+    }
+}
+
+/// HTML void elements: self-closing form, never get an end tag.
+///
+/// Only used by the markdown path; gated behind the `markdown` feature.
+#[cfg(feature = "markdown")]
+const VOID_TAGS: &[&str] = &[
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
+    "param", "source", "track", "wbr",
+];
+
+/// Serialize the inner HTML of `node`, omitting subtrees flagged by
+/// [`should_skip_element`] as well as `<img>`/`<source>`/`<picture>` with
+/// inline `data:` URIs and `<span>` elements carrying editor-bookmark
+/// attributes (`data-mce-type`).
+///
+/// This is the markdown-path counterpart of [`collect_text_filtered`]:
+/// instead of extracting text, it produces an HTML string with non-content
+/// subtrees pruned, so a downstream HTML-to-markdown converter receives
+/// only the article's real DOM (no script payloads, SVG blobs, or
+/// editor artifacts).
+#[cfg(feature = "markdown")]
+pub(crate) fn filtered_inner_html(
+    node: &ego_tree::NodeRef<'_, scraper::node::Node>,
+) -> String {
+    let mut out = String::new();
+    for child in node.children() {
+        serialize_node_filtered(&child, &mut out);
+    }
+    out
+}
+
+#[cfg(feature = "markdown")]
+fn serialize_node_filtered(
+    node: &ego_tree::NodeRef<'_, scraper::node::Node>,
+    out: &mut String,
+) {
+    match node.value() {
+        scraper::Node::Text(txt) => {
+            escape_html_text(txt, out);
+        }
+        scraper::Node::Element(elem) => {
+            if should_skip_element(elem)
+                || is_editor_artifact_span(elem)
+                || has_data_uri_media(elem)
+            {
+                return;
+            }
+            out.push('<');
+            out.push_str(elem.name());
+            for (name, value) in elem.attrs() {
+                out.push(' ');
+                out.push_str(name);
+                out.push_str("=\"");
+                escape_attr_value(value, out);
+                out.push('"');
+            }
+            out.push('>');
+            if VOID_TAGS.contains(&elem.name()) {
+                return;
+            }
+            for child in node.children() {
+                serialize_node_filtered(&child, out);
+            }
+            out.push_str("</");
+            out.push_str(elem.name());
+            out.push('>');
+        }
+        _ => {
+            for child in node.children() {
+                serialize_node_filtered(&child, out);
+            }
+        }
+    }
+}
+
+/// Returns true if `elem` is a `<span data-mce-type="...">` editor bookmark,
+/// which carries no user-visible content.
+#[cfg(feature = "markdown")]
+fn is_editor_artifact_span(elem: &scraper::node::Element) -> bool {
+    elem.attr("data-mce-type").is_some()
+}
+
+/// Returns true if `elem` is an `<img>`/`<source>`/`<picture>` whose `src`
+/// is a `data:` URI or whose `srcset` contains a `data:` entry.
+#[cfg(feature = "markdown")]
+fn has_data_uri_media(elem: &scraper::node::Element) -> bool {
+    if !matches!(elem.name(), "img" | "source" | "picture") {
+        return false;
+    }
+    if let Some(src) = elem.attr("src")
+        && src.trim_start().to_ascii_lowercase().starts_with("data:")
+    {
+        return true;
+    }
+    if let Some(srcset) = elem.attr("srcset")
+        && srcset.contains("data:")
+    {
+        return true;
+    }
+    false
+}
+
+#[cfg(feature = "markdown")]
+fn escape_html_text(s: &str, out: &mut String) {
+    for c in s.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            _ => out.push(c),
+        }
+    }
+}
+
+#[cfg(feature = "markdown")]
+fn escape_attr_value(s: &str, out: &mut String) {
+    for c in s.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '"' => out.push_str("&quot;"),
+            _ => out.push(c),
         }
     }
 }

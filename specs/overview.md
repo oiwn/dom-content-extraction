@@ -40,9 +40,10 @@ For command-line usage, see [`pginf`](https://github.com/oiwn/pageinfo-rs).
 The library filters out non-content elements that would pollute extracted text or skew density scoring:
 
 - **Structural skips**: `script`, `noscript`, `style`, `svg`, `template`, `canvas` subtrees
-- **Hidden containers**: `hidden`, `aria-hidden="true"`, inline `display:none` / `visibility:hidden`
+- **Hidden containers**: `hidden`, `aria-hidden="true"`, inline `display:none` / `visibility:hidden`, plus Tailwind/Bootstrap utility-class tokens `hidden`, `invisible`, `sr-only` in the `class` attribute
 - **Boilerplate containers**: `robots-nocontent`, `sharedaddy`, `sd-sharing`, `jetpack-likes-widget`, `jp-relatedposts`, `ads__`, `adfox`, `yatag`, `data-content="webR"`
 - **Text-fragment classifier**: detects CSS blocks and machine-like JS/config blobs using shape evidence (punctuation density, assignment/call syntax, encoded tokens) without broad keyword filtering
+- **Markdown-path DOM pruning**: `filtered_inner_html` (in `utils.rs`) applies the same skip rules to the HTML string handed to htmd, plus drops `<img>`/`<source>`/`<picture>` with inline `data:` URIs and `<span data-mce-type="...">` TinyMCE editor bookmarks. Regression coverage in `tests/e2e_leaks.rs` against real-world fixtures stored in `html/pages.zip`
 
 ### Examples
 
