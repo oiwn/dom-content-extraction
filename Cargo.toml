@@ -32,7 +32,7 @@ panic = "abort"
 
 [dependencies]
 ego-tree = "0.11"
-scraper = "0.26"
+scraper = "0.27"
 thiserror = "2.0"
 unicode-normalization = "0.1"
 unicode-segmentation = "1.13"
