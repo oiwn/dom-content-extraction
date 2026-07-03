@@ -33,6 +33,7 @@ the main content programmatically. This library helps solve this problem by:
 - Efficient processing of large documents
 - Error handling for malformed HTML
 - **Markdown output** (optional feature) - Extract content as structured markdown
+- **Article extraction** — `get_article`/`DensityTree::extract_article` returns main-article text with sidebar and ticker content excluded, using the same anchor-and-walk-up strategy as the markdown path
 
 ## Unicode Support
 
@@ -124,6 +125,22 @@ println!("{}", markdown);
 # Ok::<(), dom_content_extraction::DomExtractionError>(())
 ```
 
+### Article Extraction (ticker/sidebar-free)
+
+`get_content` uses a contiguous-block heuristic that can sweep in dense
+sidebar/ticker content appearing before the article body in the DOM. For clean
+article text, use `get_article`, which anchors at the densest subtree and walks
+up to its enclosing container:
+
+```rust
+use dom_content_extraction::{get_article, scraper::Html};
+
+let document = Html::parse_document(html);
+// Excludes "Latest News" tickers, sidebars, and other high-density noise
+// that precedes the article body in the DOM.
+let article = get_article(&document).unwrap();
+```
+
 ## Run examples
 
 Check examples.
@@ -144,6 +161,13 @@ Extract content as markdown from lorem ipsum (requires markdown feature):
 
 ```bash
 cargo run --example check -- lorem-ipsum-markdown
+```
+
+Run extraction over every page in `html/pages.zip` (text default, or `--article`
+for ticker-clean output, or `--markdown`):
+
+```bash
+cargo run --example check_pages -- --article
 ```
 
 There is scoring example i'm trying to implement scoring.

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.4
+
+### Added
+
+- `DensityTree::extract_article` — plain-text article extractor that anchors at the densest subtree and walks up to its nearest `<article>`/`<main>`/`<section>`/`<div>`/`<content>` container. Avoids the contiguous-block heuristic in `extract_content` that pulls in high-density sidebar/ticker elements appearing before the article body in DOM order. Mirrors the anchor-and-walk-up strategy of `extract_content_as_markdown`, but renders the container as plain text. Works without the `markdown` feature.
+- `get_article(&document)` — convenience wrapper around `DensityTree::extract_article`, parallel to `get_content`.
+- `tests/e2e_article.rs` — regression test against a real theblock.co fixture (ticker excluded, article body present).
+- `test_extract_article_excludes_ticker` unit test in `src/cetd.rs`.
+
+### Changed
+
+- Dependency bumps: `scraper` 0.26 → 0.27, `thiserror` 2.0 → 2, `zip` (dev) 8.5 → 8.6.
+- `html/pages.zip` fixture corpus cleaned and compressed (~45% smaller, 4.6 MB → 2.7 MB); added the theblock.co Bessent/CBDC violator fixture. Leak-regression fixtures retain their `<script>`/`<style>`/`<svg>` so markdown-filtering coverage stays intact.
+- `examples/check_pages.rs` — new `--article`/`-a` mode for ticker-clean article extraction.
+
+### Notes
+
+- `extract_content` and `get_content` are unchanged and remain for backward compatibility. Prefer `extract_article`/`get_article` when you need just the article body without sidebar/ticker noise.
+
 ## 0.4.3
 
 ### Fixed
