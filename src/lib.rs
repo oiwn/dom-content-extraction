@@ -157,3 +157,79 @@ pub fn get_article(document: &scraper::Html) -> Result<String, DomExtractionErro
     dtree.calculate_density_sum()?;
     dtree.extract_article(document)
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    // Same fixture used by cetd::tests::test_extract_content, where the
+    // expected extracted content ("Here is article", "Even more huge") and
+    // excluded noise ("Menu") are already known. Using it here exercises the
+    // get_content wrapper end-to-end on a realistic document.
+    const TEST_1_HTML: &str = include_str!("../html/test_1.html");
+
+    #[test]
+    fn get_content_returns_article_text() {
+        let document = scraper::Html::parse_document(TEST_1_HTML);
+        let content = get_content(&document).unwrap();
+        assert!(
+            content.contains("Here is article"),
+            "get_content should return the article body:\n{content}"
+        );
+        assert!(content.contains("Even more huge"));
+        assert!(
+            !content.contains("Menu"),
+            "get_content should exclude navigation:\n{content}"
+        );
+    }
+
+    #[test]
+    fn get_article_excludes_ticker() {
+        // Mirrors cetd::tests::test_extract_article_excludes_ticker, but
+        // exercises the get_article() wrapper end-to-end (it builds its own
+        // DensityTree rather than receiving one). The article paragraph must be
+        // substantial enough to win the max-density-sum anchor over the ticker.
+        let html = r#"<html><body>
+            <div class="ticker">
+                <a href="/1">Breaking: Aave Labs secures UK license</a>
+                <a href="/2">SpaceX perps plunge 45% on Hyperliquid</a>
+                <a href="/3">Paxos secures SEC registration</a>
+            </div>
+            <article>
+                <h1>Treasury Secretary reiterates no CBDC commitment</h1>
+                <p>U.S. Treasury Secretary Scott Bessent reiterated that the current
+                administration will not allow a central bank digital currency
+                (CBDC). During a White House press briefing, Bessent said CBDCs are
+                clearly off the table and reaffirmed the administration's focus on
+                making the U.S. a hub for digital assets. Bessent also mentioned
+                that the GENIUS stablecoin legislation passed with bipartisan
+                support, and the Clarity Act is gaining similar legislative
+                momentum.</p>
+            </article>
+        </body></html>"#;
+        let document = scraper::Html::parse_document(html);
+        let article = get_article(&document).unwrap();
+        assert!(article.contains("Scott Bessent"));
+        assert!(article.contains("CBDC"));
+        assert!(
+            !article.contains("Aave Labs"),
+            "ticker leaked through get_article:\n{article}"
+        );
+        assert!(!article.contains("SpaceX"));
+        assert!(!article.contains("Hyperliquid"));
+    }
+
+    #[test]
+    fn get_article_on_contentless_document_returns_empty() {
+        // No article body text → the extractor returns an empty string,
+        // not an error. Guards the degenerate-input path through the wrapper.
+        let html = r#"<html><body><script>var x = 1;</script></body></html>"#;
+        let document = scraper::Html::parse_document(html);
+        let article = get_article(&document).unwrap();
+        assert!(
+            article.trim().is_empty(),
+            "expected empty output for contentless HTML, got:\n{article}"
+        );
+    }
+}
