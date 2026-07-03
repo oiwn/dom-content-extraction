@@ -367,6 +367,75 @@ impl<'a> DensityTree {
             Ok(String::new())
         }
     }
+
+    /// Extracts the main article content as plain text from the HTML document.
+    ///
+    /// Unlike [`extract_content`](Self::extract_content), which selects the
+    /// largest contiguous block of high-density nodes, this method anchors at
+    /// the node with the maximum density sum (typically the article body) and
+    /// walks up to its nearest container element (`<article>`, `<main>`,
+    /// `<section>`, `<div>`, or `<content>`). This avoids pulling in
+    /// high-density sidebar/ticker elements that appear before the article
+    /// body in DOM order.
+    ///
+    /// Mirrors the anchor-and-walk-up strategy of
+    /// `extract_content_as_markdown`, but renders the container as plain text
+    /// instead of markdown.
+    ///
+    /// # Arguments
+    ///
+    /// * `document` - A reference to the HTML document.
+    ///
+    /// # Returns
+    ///
+    /// Result with `String` containing the extracted article text, or
+    /// `DomExtractionError`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use dom_content_extraction::{DensityTree, scraper::Html};
+    /// let document = Html::parse_document("<html>...</html>");
+    /// let mut dtree = DensityTree::from_document(&document).unwrap();
+    /// dtree.calculate_density_sum();
+    /// let article = dtree.extract_article(&document).unwrap();
+    /// println!("{}", article);
+    /// ```
+    pub fn extract_article(
+        &self,
+        document: &Html,
+    ) -> Result<String, DomExtractionError> {
+        let max_node = match self.get_max_density_sum_node() {
+            Some(node) => node,
+            None => return Ok(String::new()),
+        };
+
+        // Walk up the scraper tree from the max-density node to the nearest
+        // container element, mirroring `find_content_container` in markdown.rs.
+        let max_node_id = max_node.value().node_id;
+        let mut current = document
+            .tree
+            .get(max_node_id)
+            .ok_or(DomExtractionError::NodeAccessError(max_node_id))?;
+
+        for _ in 0..5 {
+            let Some(parent) = current.parent() else {
+                break;
+            };
+            current = parent;
+            if let Some(element) = scraper::ElementRef::wrap(current) {
+                let tag = element.value().name();
+                if matches!(tag, "article" | "main" | "section" | "div" | "content")
+                {
+                    break;
+                }
+            }
+        }
+
+        // `get_node_text` already filters script/style/svg/hidden subtrees and
+        // returns whitespace-normalized text.
+        get_node_text(current.id(), document)
+    }
 }
 
 impl std::fmt::Debug for DensityTree {
@@ -592,6 +661,60 @@ mod tests {
         assert!(extracted_content.contains("Even more huge"));
 
         assert!(!extracted_content.contains("Menu"));
+    }
+
+    #[test]
+    fn test_extract_article_excludes_ticker() {
+        // Regression for the "Latest Crypto News" ticker pollution described in
+        // specs/ctx.md: the ticker sits before the article in DOM order and is
+        // dense enough to be swept up by `extract_content`'s contiguous-block
+        // heuristic. `extract_article` anchors at the article body and walks up
+        // to the enclosing <article>, so sibling ticker content is excluded.
+        let html = r#"<html><body>
+            <div class="ticker">
+                <a href="/1">Breaking: Aave Labs secures UK license May 29</a>
+                <a href="/2">SpaceX perps plunge 45% on Hyperliquid May 29</a>
+                <a href="/3">Paxos secures SEC registration May 29</a>
+            </div>
+            <article>
+                <h1>Treasury Secretary reiterates no CBDC commitment</h1>
+                <p>U.S. Treasury Secretary Scott Bessent reiterated that the
+                current administration will not allow a central bank digital
+                currency (CBDC). During a White House press briefing, Bessent
+                said CBDCs are clearly off the table and reaffirmed the Donald
+                Trump administration's focus on making the U.S. a hub for
+                digital assets. Bessent also mentioned that the GENIUS stablecoin
+                legislation passed with bipartisan support, and the Clarity Act
+                is gaining similar legislative momentum.</p>
+            </article>
+        </body></html>"#;
+
+        let document = build_dom(html);
+        let mut dtree = DensityTree::from_document(&document).unwrap();
+        dtree.calculate_density_sum().unwrap();
+
+        let text = dtree.extract_article(&document).unwrap();
+
+        assert!(
+            text.contains("Scott Bessent"),
+            "article entity missing from extract_article output:\n{text}"
+        );
+        assert!(
+            text.contains("CBDC"),
+            "article entity missing from extract_article output:\n{text}"
+        );
+        assert!(
+            !text.contains("Aave Labs"),
+            "ticker entity leaked into extract_article output:\n{text}"
+        );
+        assert!(
+            !text.contains("SpaceX"),
+            "ticker entity leaked into extract_article output:\n{text}"
+        );
+        assert!(
+            !text.contains("Hyperliquid"),
+            "ticker entity leaked into extract_article output:\n{text}"
+        );
     }
 
     #[test]

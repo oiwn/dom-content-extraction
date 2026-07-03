@@ -1,6 +1,6 @@
 [package]
 name = "dom-content-extraction"
-version = "0.4.3"
+version = "0.4.4"
 
 description = "Rust implementation of Content extraction via text density paper"
 license = "MPL-2.0"
@@ -32,8 +32,8 @@ panic = "abort"
 
 [dependencies]
 ego-tree = "0.11"
-scraper = "0.26"
-thiserror = "2.0"
+scraper = "0.27"
+thiserror = "2"
 unicode-normalization = "0.1"
 unicode-segmentation = "1.13"
 htmd = { version = "0.5", optional = true }
@@ -42,7 +42,7 @@ htmd = { version = "0.5", optional = true }
 chardetng = "1.0"
 encoding_rs = "0.8"
 criterion = "0.8"
-zip = "8.5"
+zip = "8.6"
 anyhow = "1.0"
 regex = "1.12"
 rayon = "1.12"

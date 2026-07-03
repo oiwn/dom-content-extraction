@@ -142,3 +142,18 @@ pub fn get_content(document: &scraper::Html) -> Result<String, DomExtractionErro
     dtree.calculate_density_sum()?;
     dtree.extract_content(document)
 }
+
+/// Extracts the main article content from an HTML document as plain text.
+///
+/// Convenience wrapper around [`DensityTree::extract_article`]: builds the
+/// [`DensityTree`], computes density sums, and returns the article text in
+/// one call. Mirrors [`get_content`] for the article-extraction path.
+///
+/// Unlike [`get_content`] (which can include high-density sidebar/ticker
+/// content), this anchors at the densest subtree and walks up to its
+/// enclosing container, excluding sibling noise.
+pub fn get_article(document: &scraper::Html) -> Result<String, DomExtractionError> {
+    let mut dtree = DensityTree::from_document(document)?;
+    dtree.calculate_density_sum()?;
+    dtree.extract_article(document)
+}

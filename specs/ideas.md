@@ -19,6 +19,10 @@ Implementation sketch:
 - Rust users ignore the feature; Python users `pip install` via maturin building from the same source
 - `cargo publish` continues to work — `python` is opt-in, default stays `[]`
 
+## Skill for LLM
+
+Add skill for llm, which can guide the machines to use library for you.
+
 ## Caller-controlled extraction policy
 
 The current hardening work mixes two decisions:
