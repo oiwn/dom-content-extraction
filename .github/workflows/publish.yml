@@ -7,6 +7,9 @@ on:
     paths:
       - 'Cargo.toml'
 
+permissions:
+  contents: read
+
 jobs:
   check-version:
     runs-on: ubuntu-latest
@@ -14,7 +17,7 @@ jobs:
       should_publish: ${{ steps.compare_versions.outputs.should_publish }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7.0.1
       with:
         fetch-depth: 0  # Fetch all history for comparing versions
 
@@ -45,15 +48,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7.0.1
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
 
     - name: Check if package is publishable
-      run: cargo publish --dry-run
+      run: cargo publish --locked --dry-run
 
     - name: Publish to crates.io
-      run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
-
-
+      run: cargo publish --locked --token ${{ secrets.CRATES_IO_TOKEN }}

@@ -1,7 +1,8 @@
+.claude/
+.codex/
 .DS_Store
 .pginf
 /target
-/Cargo.lock
 
 # /examples
 /examples/**/target
@@ -12,4 +13,3 @@
 interfax_cb.html
 examples/debug_interfax.rs
 *.profraw
-
