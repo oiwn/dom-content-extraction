@@ -22,6 +22,7 @@ exclude = [
 ]
 
 edition = "2024"
+rust-version = "1.88"
 
 [profile.release]
 opt-level = "z"

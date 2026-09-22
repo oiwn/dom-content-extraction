@@ -83,7 +83,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        toolchain: ["1.89", "stable"]
+        toolchain: ["1.88", "stable"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7.0.1
@@ -91,7 +91,7 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
       - uses: Swatinem/rust-cache@v2.9.2
-      - run: cargo check --locked
+      - run: cargo check --locked --lib --all-features
 
   test:
     name: Run Tests

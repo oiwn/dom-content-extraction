@@ -59,7 +59,7 @@ This ensures accurate content extraction from web pages in any language, with pr
 
 ## Usage
 
-MSRV is 1.85 due to 2024 edition. Living on the edge!
+MSRV is 1.88.
 
 Basic usage example:
 
@@ -214,4 +214,3 @@ Average time per file: 17.34ms
 ## CLI Tool
 
 For command-line usage (URL fetching, file processing, encoding detection), see [`pageinfo-rs`](https://github.com/oiwn/pageinfo-rs).
-

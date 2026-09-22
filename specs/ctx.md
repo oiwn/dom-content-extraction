@@ -9,3 +9,5 @@ State: complete
 - [x] Run audit, formatting, checks, and tests on supported toolchains/features
 - [x] Use readable release/channel references for GitHub Actions
 - [x] Add the OpenCode comment and TODO-to-issues workflow
+- [x] Declare and continuously verify MSRV 1.88
+- [x] Add and validate an explicit cargo-deny policy
