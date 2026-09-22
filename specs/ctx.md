@@ -7,3 +7,5 @@ State: complete
 - [x] Pin CI actions, minimize workflow permissions, and enforce locked Cargo resolution
 - [x] Extend Dependabot to GitHub Actions updates
 - [x] Run audit, formatting, checks, and tests on supported toolchains/features
+- [x] Use readable release/channel references for GitHub Actions
+- [x] Add the OpenCode comment and TODO-to-issues workflow
