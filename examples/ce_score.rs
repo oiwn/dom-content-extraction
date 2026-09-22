@@ -1,6 +1,8 @@
 // TODO: whole thing should be optimized because now it's really too much slow!
 use anyhow::{Context, Result};
+use chardetng::EncodingDetector;
 use dom_content_extraction::{DensityTree, scraper::Html};
+use encoding_rs::Encoding;
 use rayon::prelude::*;
 use regex::Regex;
 use std::{
@@ -9,6 +11,32 @@ use std::{
     time::{Duration, Instant},
 };
 use strsim::sorensen_dice;
+
+/// Decode file bytes to UTF-8, detecting the encoding when needed.
+///
+/// Handles legacy CleanEval files (e.g. Windows-1251) that are not valid UTF-8.
+fn decode_bytes(bytes: &[u8]) -> String {
+    if let Ok(text) = std::str::from_utf8(bytes) {
+        return text.to_owned();
+    }
+    let mut detector = EncodingDetector::new(chardetng::Iso2022JpDetection::Deny);
+    detector.feed(bytes, true);
+    let encoding: &Encoding = detector.guess(None, chardetng::Utf8Detection::Allow);
+    let (decoded, _, had_errors) = encoding.decode(bytes);
+    if had_errors {
+        eprintln!(
+            "warning: decoding errors while applying {}",
+            encoding.name()
+        );
+    }
+    decoded.into_owned()
+}
+
+fn read_file(file_path: &Path) -> Result<String> {
+    let bytes = fs::read(file_path)
+        .with_context(|| format!("Failed to read file: {:?}", file_path))?;
+    Ok(decode_bytes(&bytes))
+}
 
 fn normalize_text(text: &str) -> String {
     text.split_whitespace().collect::<Vec<&str>>().join(" ")
@@ -31,11 +59,7 @@ fn clean_and_normalize_text(text: &str) -> String {
 }
 
 fn extract_content_from_html(file_path: &Path) -> Result<String> {
-    // let content = fs::read_to_string(file_path)
-    //     .with_context(|| format!("Failed to read file: {:?}", file_path))?;
-    let content = fs::read(file_path)
-        .with_context(|| format!("Failed to read file: {:?}", file_path))?;
-    let content = String::from_utf8_lossy(&content).into_owned();
+    let content = read_file(file_path)?;
 
     let document = Html::parse_document(&content);
     let mut dtree = DensityTree::from_document(&document).unwrap();
@@ -46,11 +70,7 @@ fn extract_content_from_html(file_path: &Path) -> Result<String> {
 }
 
 fn clean_txt_file(file_path: &Path) -> Result<String> {
-    // let content = fs::read_to_string(file_path)
-    //     .with_context(|| format!("Failed to read file: {:?}", file_path))?;
-    let content = fs::read(file_path)
-        .with_context(|| format!("Failed to read file: {:?}", file_path))?;
-    let content = String::from_utf8_lossy(&content).into_owned();
+    let content = read_file(file_path)?;
 
     // Remove URL line from the top
     let content = content.lines().skip(1).collect::<Vec<&str>>().join("\n");

@@ -1,15 +1,32 @@
+use chardetng::EncodingDetector;
+use encoding_rs::Encoding;
 use std::fs;
 
-#[test]
-fn test_non_utf8_file_fails_with_current_implementation() {
-    // This test demonstrates the current limitation:
-    // Windows-1251 encoded files fail to be read
-    let result = fs::read_to_string("html/test_windows1251.html");
+/// Same decoding strategy as `examples/ce_score.rs`:
+/// fast-path UTF-8, otherwise detect encoding and decode.
+fn decode_bytes(bytes: &[u8]) -> String {
+    if let Ok(text) = std::str::from_utf8(bytes) {
+        return text.to_owned();
+    }
+    let mut detector = EncodingDetector::new(chardetng::Iso2022JpDetection::Deny);
+    detector.feed(bytes, true);
+    let encoding: &Encoding = detector.guess(None, chardetng::Utf8Detection::Allow);
+    let (decoded, _, _had_errors) = encoding.decode(bytes);
+    decoded.into_owned()
+}
 
-    // This should fail with "stream did not contain valid UTF-8"
-    assert!(result.is_err());
-    let error = result.unwrap_err();
-    assert!(error.to_string().contains("valid UTF-8"));
+#[test]
+fn test_non_utf8_file_is_detected_and_decoded() {
+    // Windows-1251 files must no longer fail with
+    // "stream did not contain valid UTF-8" (issue: CleanEval file 730)
+    let bytes = fs::read("html/test_windows1251.html").expect("fixture must exist");
+
+    // Sanity check: raw bytes are indeed not valid UTF-8
+    assert!(std::str::from_utf8(&bytes).is_err());
+
+    let content = decode_bytes(&bytes);
+    assert!(content.contains("Привет мир"));
+    assert!(content.contains("Это тест на русском языке"));
 }
 
 #[test]
