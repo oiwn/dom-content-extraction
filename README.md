@@ -181,14 +181,8 @@ and unpack archives into `data/` directory.
 cargo run --example ce_score
 ```
 
-As far as i see there is problem opening some files:
-
-```bash
-Error processing file 730: Failed to read file: "data/finalrun-input/730.html"
-
-Caused by:
-    stream did not contain valid UTF-8
-```
+Non-UTF-8 files (legacy CleanEval pages in Windows-1251, etc.) are handled by
+detecting the encoding with `chardetng` and decoding via `encoding_rs`.
 
 But overall extraction works pretty well:
 
