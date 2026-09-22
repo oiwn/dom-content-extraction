@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
 
       - name: Run opencode
-        uses: anomalyco/opencode/github@v1.18.32
+        uses: anomalyco/opencode/github@v2.0.10
         env:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
         with:
@@ -67,7 +67,7 @@ jobs:
           --force
 
       - name: Scan changed comments and create issues
-        uses: anomalyco/opencode/github@v1.18.32
+        uses: anomalyco/opencode/github@v2.0.10
         env:
           GITHUB_TOKEN: ${{ github.token }}
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
