@@ -43,7 +43,7 @@ htmd = { version = "0.5.5", optional = true }
 chardetng = "1.0.0"
 encoding_rs = "0.8.41"
 criterion = "0.8.2"
-zip = "8.6.0"
+zip = "9.0.5"
 anyhow = "1.0.104"
 regex = "1.13.1"
 rayon = "1.12.0"
